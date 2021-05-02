@@ -211,7 +211,16 @@ var status = {
 		Link:{
 			sum0: 0
 		},
-		Type:{
+        KeyIn:{
+			sum0: 0
+		},
+        KeyAUX:{
+			sum0: 0
+		},
+        KeyCh:{
+			sum0: 0
+		},
+        Type:{
 			sum0: 0
 		},
 		Attac:{
@@ -259,16 +268,7 @@ var status = {
 			sum0: 0
 		}
 	},
-	faderEQ: {
-		On:{
-			sum0: false
-		},
-		LPFOn:{
-			sum0: false
-		},
-		HPFOn:{
-			sum0: false
-		},
+faderEQ: {
 		Mode:{
 			sum0: 0
 		},
@@ -280,6 +280,9 @@ var status = {
 		},
 		LowG:{
 			sum0: 0
+		},
+        HPFOn:{
+			sum0: false
 		},
 		LowMidQ:{
 			sum0: 0
@@ -307,6 +310,12 @@ var status = {
 		},
 		HiG:{
 			sum0: 0
+		},
+        LPFOn:{
+			sum0: false
+		},
+        On:{
+			sum0: false
 		}
 	},
 	faderDelay: {
@@ -500,10 +509,10 @@ var deviceMessageHandler = function(message) {
                     num = message[8]+1;
 					value = config.data2Fader(message.slice(9));
 					
-                    status.faderGate[Object.keys(status.faderGate)[message[9]]]['channel' + num] = value;
+                    status.faderGate[Object.keys(status.faderGate)[message[7]]]['channel' + num] = value;
 
 					outMessage = {
-                        type: 'faderGate' + Object.keys(status.faderGate)[message[9]],
+                        type: 'faderGate' + Object.keys(status.faderGate)[message[7]],
                         target: "channel",
                         num: num,
                         value: value
@@ -515,10 +524,10 @@ var deviceMessageHandler = function(message) {
                     num = message[8]+1;
 					value = config.data2Fader(message.slice(9));
 					
-                    status.faderComp[Object.keys(status.faderComp)[message[9]]]['channel' + num] = value;
+                    status.faderComp[Object.keys(status.faderComp)[message[7]]]['channel' + num] = value;
 					
 					outMessage = {
-                        type: 'faderComp' + Object.keys(status.faderComp)[message[9]],
+                        type: 'faderComp' + Object.keys(status.faderComp)[message[7]],
                         target: "channel",
                         num: num,
                         value: value
@@ -530,10 +539,10 @@ var deviceMessageHandler = function(message) {
                     num = message[8]+1;
 					value = config.data2Fader(message.slice(9));
 					
-                    status.faderEQ[Object.keys(status.faderEQ)[message[9]]]['channel' + num] = value;
+                    status.faderEQ[Object.keys(status.faderEQ)[message[7]]]['channel' + num] = value;
 					
 					outMessage = {
-                        type: 'faderEQ' + Object.keys(status.faderEQ)[message[9]],
+                        type: 'faderEQ' + Object.keys(status.faderEQ)[message[7]],
                         target: "channel",
                         num: num,
                         value: value
@@ -545,25 +554,10 @@ var deviceMessageHandler = function(message) {
                     num = message[8]+1;
 					value = config.data2Fader(message.slice(9));
 					
-                    status.faderDelay[Object.keys(status.faderDelay)[message[9]]]['channel' + num] = value;
+                    status.faderDelay[Object.keys(status.faderDelay)[message[7]]]['channel' + num] = value;
 					
 					outMessage = {
-                        type: 'faderDelay' + Object.keys(status.faderDelay)[message[9]],
-                        target: "channel",
-                        num: num,
-                        value: value
-                    };
-
-                    break;
-					
-				case config.sysExElements.channelGate:
-                    num = message[8]+1;
-					value = config.data2Fader(message.slice(9));
-					
-                    status.faderGate[Object.keys(status.faderGate)[message[9]]]['channel' + num] = value;
-					
-					outMessage = {
-                        type: 'faderGate' + Object.keys(status.faderGate)[message[9]],
+                        type: 'faderDelay' + Object.keys(status.faderDelay)[message[7]],
                         target: "channel",
                         num: num,
                         value: value
@@ -792,7 +786,7 @@ var deviceMessageHandler = function(message) {
  * dispatch client messages and send the corresponding midi commands
  * @param {object} message
  * 		{
- *			type: fader / on,
+ *			type: fader / on / ... ,
  *			target: channel / aux / bus / sum
  *			num: {int}
  *			num2: {int} aux number for target auxsend
@@ -861,6 +855,32 @@ var clientMessageHandler = function(message, socket) {
             }
 
             break;
+
+        // control effect settings
+        case "faderGate":
+
+            setFaderEffect(config.sysExElements.faderGate,Object.keys(status.faderGate).indexOf(message.target),message.num,message.value)
+            
+            break;
+        
+        case "faderComp":
+
+            setFaderEffect(config.sysExElements.faderComp,Object.keys(status.faderComp).indexOf(message.target),message.num,message.value)
+                
+            break;
+
+        case "faderEQ":
+
+            setFaderEffect(config.sysExElements.faderEQ,Object.keys(status.faderEQ).indexOf(message.target),message.num,message.value)
+            
+            break;
+
+        case "faderDelay":
+
+            setFaderEffect(config.sysExElements.faderDelay,Object.keys(status.faderDelay).indexOf(message.target),message.num,message.value)
+            
+            break;
+
 
         case "sync":
 
@@ -949,38 +969,21 @@ var setChannelOn = function(channel, on) {
     status.on['channel' + channel] = on;
 };
 
-var setChannelGate = function(channel,parameter) {
+//  Gate, Comp, EQ, Delay
+var setFaderEffect = function(effect,property,channel,parameter) {
     if(channel < 1 || channel > config.channelCount) {
         console.log('[mixer] Invalid channel number ' + channel + ' (on)');
         return;
     }
 
-    if(parameter.length != status.faderGate.length) {
-        console.log('[mixer] Invalid parameter length ' + parameter.length + ' (faderGate length:' + status.faderGate.length + ')');
-        return;
-    }
-
-    for(j = 0; j < status.faderGate.length; j++) {
-        device.send(
-            config.parameterChange(
-                [config.sysExElements.faderGate,j,channel-1].concat(config.fader2Data(parameter[Object.keys(parameter)[j]]))
-            )
-        );
-    }
+    device.send(
+        config.parameterChange(
+            [effect,property,channel-1].concat(config.fader2Data(parameter[Object.keys(parameter)[j]]))
+        )
+    
+    )
 };
 
-// add comp, eq, ... 
-
-for(i = 0; i < config.channelCount; i++) {
-
-    for(j = 0; j < status.faderEQ.length; j++) {
-        device.send(
-            config.parameterRequest(
-                [config.sysExElements.channelEQ,i,j]
-            )
-        );
-    }
-};
 
 
 var setSumFader = function(value) {
