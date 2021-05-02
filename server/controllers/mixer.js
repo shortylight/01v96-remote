@@ -8,6 +8,8 @@ var app,
     // runtime counter for config.remoteMeterInterval
     meterFilterCount = 0;
 
+    // runtime channel name cache
+    faderNameCache = '';
 
 
 var init = function() {
@@ -29,6 +31,7 @@ var init = function() {
         // standard MIDI interface
         default:
             console.log('[mixer] Using standard MIDI controller');
+			console.log('[mixer] Using port ' + process.argv[3]);
             device = require('../modules/mixer_midi');
 
     }
@@ -41,6 +44,10 @@ var init = function() {
     // periodical remote meter request
     sendRemoteMeterRequest();
     setInterval(sendRemoteMeterRequest, 10000);
+	
+	// periodical channel name request (charwise)
+	sendFaderNameRequest();
+    setInterval(sendFaderNameRequest, 200);
 
     // periodical sync request
     fillStatus();
@@ -58,14 +65,14 @@ var config = {
 
     channelCount: 32,
     auxCount: 8,
-    auxSendCount: 4,
+    auxSendCount: 8,
     busCount: 8,
 
     faderThreshold: 5,
 
     // sysEx message beginnings, general and device-specific
-    sysExStart: [240,67,48,62],
-    sysExStartSpecific: [240,67,16,62],
+    sysExStart: [240,67,48,62],				//
+    sysExStartSpecific: [240,67,16,62],		//
 
     // sysEx parameter change and parameter request
     parameterChange: function(arr, deviceSpecific) {
@@ -78,17 +85,42 @@ var config = {
 
     // sysEx message types (7th byte)
     sysExElements: {
-        channelFader: 28,
+        channelPhase: 23,
+				
+		channelPair: 24,
+				
+		channelInsert: 25,
+				
+        channelOn: 26,
+        sumOn: 77,
+        auxOn: 54,
+        busOn: 41,
+
+		channelPan: 27,
+		sumPan: 78,
+
+		channelFader: 28,
         sumFader: 79,
         auxSendFader: 35,
         auxFader: 57,
         busFader: 43,
 
-        channelOn: 26,
-        sumOn: 77,
-        auxOn: 54,
-        busOn: 41
+		channelGate: 30,
+		
+		channelComp: 31,
+		
+		channelEQ: 32,
+		
+		channelDelay: 33
+		
     },
+	
+    /* not used anymore
+	channelGateProperties: ['On','Link','keyIn','KeyAux','KeyCh','Type','Attac','Range','Hold','Decay','Threshold'],
+	channelCompProperties: ['LocComp','On','Link','Type','Attac','Release','Ratio','Gain','Knee','Threshold'],
+	channelEQProperties: ['Mode','LowQ','LowF','LowG','HPFOn','LowMidQ','LowMidF','LowMidG','HiMidQ','HiMidF','HiMidG','HiQ','HiF','HiG','LPFOn','On'],
+	channelDelayProperties: ['On','Mix','FBGain','Time'],
+    */ 
 
     // aux send: 8th byte is used for aux determination
     auxSendParam: function(aux) {
@@ -131,10 +163,30 @@ var config = {
         32,			// Count L
         0xF7
     ],
-
-    // interval for remote meter level transmission to the client
+	
+	// interval for remote meter level transmission to the client
     // value*50msec
-    remoteMeterInterval: 4
+    remoteMeterInterval: 4,
+	
+	// request channel names
+    // sent every 5000msec
+    // request has to be sent every 10sec
+    remoteFaderNameRequest: [
+        0xF0,		// Start System Exclusive Message
+        0x43,		// Manufacturers ID Number (Yamaha)
+        0x30,		// 3n; n 0..15 MIDI Channel
+        0x3E,		// Model ID (Digital Mixer
+		0x0D,		// (01V96)
+		0x02,		// Adress / Setup Data
+		0x04,		// Element Number (ChannelName)
+		0x04,		// Parameter Number (Character Count)
+		0x00,		// Channel Number 
+        0xF7		// End of System Exclusive Message
+    ],
+	
+	// interval for remote meter level transmission to the client
+    // value*50msec
+    remoteFaderNameInterval: 400 // not used at the moment
 };
 
 
@@ -145,8 +197,133 @@ var status = {
     },
     fader: {
         sum0: 0
-    }
-
+    },
+	faderPan: {
+        sum0: 'CENTER'
+    },
+	faderName: {
+		sum0: 'STEREO'
+	},
+	faderGate: {
+		On:{
+			sum0: false
+		},
+		Link:{
+			sum0: 0
+		},
+		Type:{
+			sum0: 0
+		},
+		Attac:{
+			sum0: 0
+		},
+		Range:{
+			sum0: 0
+		},
+		Hold:{
+			sum0: 0
+		},
+		Decay:{
+			sum0: 0
+		},
+		Threshold:{
+			sum0: 0
+		}
+	},
+	faderComp: {
+		On:{
+			sum0: false
+		},
+		Link:{
+			sum0: 0
+		},
+		Type:{
+			sum0: 0
+		},
+		Attac:{
+			sum0: 0
+		},
+		Release:{
+			sum0: 0
+		},
+		Ratio:{
+			sum0: 0
+		},
+		Gain:{
+			sum0: 0
+		},
+		Knee:{
+			sum0: 0
+		},
+		Threshold:{
+			sum0: 0
+		}
+	},
+	faderEQ: {
+		On:{
+			sum0: false
+		},
+		LPFOn:{
+			sum0: false
+		},
+		HPFOn:{
+			sum0: false
+		},
+		Mode:{
+			sum0: 0
+		},
+		LowQ:{
+			sum0: 0
+		},
+		LowF:{
+			sum0: 0
+		},
+		LowG:{
+			sum0: 0
+		},
+		LowMidQ:{
+			sum0: 0
+		},
+		LowMidF:{
+			sum0: 0
+		},
+		LowMidG:{
+			sum0: 0
+		},
+		HiMidQ:{
+			sum0: 0
+		},
+		HiMidF:{
+			sum0: 0
+		},
+		HiMidG:{
+			sum0: 0
+		},
+		HiQ:{
+			sum0: 0
+		},
+		HiF:{
+			sum0: 0
+		},
+		HiG:{
+			sum0: 0
+		}
+	},
+	faderDelay: {
+		On:{
+			sum0: false
+		},
+		Mix:{
+			sum0: 0
+		},
+		FBGain:{
+			sum0: 0
+		},
+		Time:{
+			sum0: 0
+		}
+	}
+    
 };
 
 /**
@@ -162,7 +339,22 @@ var fillStatus = function() {
     while(--i) {
         status.on['channel' + i] = false;
         status.fader['channel' + i] = 0;
+		status.faderPan['channel' + i] = 0;
+		status.faderName['channel' + i] = 'CH' + i;
+		for(j in status.faderComp) {
+            status.faderComp[j]['channel' + i] = 0;
+		};
+		for(j in status.faderDelay) {
+			status.faderDelay[j]['channel' + i] = 0;
+		};
+		for(j in status.faderEQ) {
+			status.faderEQ[j]['channel' + i] = 0;
+		};
+		for(j in status.faderGate) {
+			status.faderGate[j]['channel' + i] = 0;
+		}
     }
+	
 
     // aux sends
 
@@ -173,6 +365,7 @@ var fillStatus = function() {
 
         while(--i) {
             status.fader['auxsend' + j + i] = 0;
+			status.faderName['auxsend'  + j + i] = 'AUXSEND ' + i;
         }
     }
 
@@ -184,6 +377,7 @@ var fillStatus = function() {
     while(--i) {
         status.on['aux' + i] = false;
         status.fader['aux' + i] = 0;
+		status.faderName['aux' + i] = 'AUX ' + i;
     }
 
     i = config.busCount + 1;
@@ -191,6 +385,7 @@ var fillStatus = function() {
     while(--i) {
         status.on['bus' + i] = false;
         status.fader['bus' + i] = 0;
+		status.faderName['bus' + i] = 'BUS ' + i;
     }
 
 };
@@ -245,7 +440,7 @@ var deviceMessageHandler = function(message) {
 
     // sysEx message
     if(messageBeginsWith(config.sysExStartSpecific) || messageBeginsWith(config.sysExStart)) {
-
+		
         // program change -> sync again
         if(message[5] == 16) {
             sendSyncRequest();
@@ -256,6 +451,7 @@ var deviceMessageHandler = function(message) {
 
             // echo messages from meter requests are accidentally
             // recognized as meter messages
+            // alternatively more analysis of message header needed
             if(message.length < 71) {
                 return;
             }
@@ -280,12 +476,123 @@ var deviceMessageHandler = function(message) {
                 outMessage.levels[i+1] = message[(9 + 2*i)];
             }
         }
-        // fader or on-button messages
+		// fader names
+		else if(message[6] == 04) {
+			//console.log('[mixer-MK] All MIDI message: [' + message + ']' + String.fromCharCode(message[12]));
+			faderNameCache += String.fromCharCode(message[12]) || ' ';
+			if (message[7] - 4 == 15 ) {
+				outMessage = {
+                        type: "faderName",
+                        target: "channel",
+                        num: message[8] + 1,
+                        value: faderNameCache
+                    };
+				faderNameCache = '';
+				status.faderName['channel' + outMessage.num] = outMessage.value;
+			}
+		}
+        // fader or on-button messages and effects
         else {
 
             switch(message[6]) {
 
-                case config.sysExElements.channelFader:
+                case config.sysExElements.channelGate:
+                    num = message[8]+1;
+					value = config.data2Fader(message.slice(9));
+					
+                    status.faderGate[Object.keys(status.faderGate)[message[9]]]['channel' + num] = value;
+
+					outMessage = {
+                        type: 'faderGate' + Object.keys(status.faderGate)[message[9]],
+                        target: "channel",
+                        num: num,
+                        value: value
+                    };
+
+                    break;
+					
+				case config.sysExElements.channelComp:
+                    num = message[8]+1;
+					value = config.data2Fader(message.slice(9));
+					
+                    status.faderComp[Object.keys(status.faderComp)[message[9]]]['channel' + num] = value;
+					
+					outMessage = {
+                        type: 'faderComp' + Object.keys(status.faderComp)[message[9]],
+                        target: "channel",
+                        num: num,
+                        value: value
+                    };
+
+                    break;
+					
+				case config.sysExElements.channelEQ:
+                    num = message[8]+1;
+					value = config.data2Fader(message.slice(9));
+					
+                    status.faderEQ[Object.keys(status.faderEQ)[message[9]]]['channel' + num] = value;
+					
+					outMessage = {
+                        type: 'faderEQ' + Object.keys(status.faderEQ)[message[9]],
+                        target: "channel",
+                        num: num,
+                        value: value
+                    };
+
+                    break;
+					
+				case config.sysExElements.channelDelay:
+                    num = message[8]+1;
+					value = config.data2Fader(message.slice(9));
+					
+                    status.faderDelay[Object.keys(status.faderDelay)[message[9]]]['channel' + num] = value;
+					
+					outMessage = {
+                        type: 'faderDelay' + Object.keys(status.faderDelay)[message[9]],
+                        target: "channel",
+                        num: num,
+                        value: value
+                    };
+
+                    break;
+					
+				case config.sysExElements.channelGate:
+                    num = message[8]+1;
+					value = config.data2Fader(message.slice(9));
+					
+                    status.faderGate[Object.keys(status.faderGate)[message[9]]]['channel' + num] = value;
+					
+					outMessage = {
+                        type: 'faderGate' + Object.keys(status.faderGate)[message[9]],
+                        target: "channel",
+                        num: num,
+                        value: value
+                    };
+
+                    break;
+					
+				case config.sysExElements.channelPan:
+                    num = message[8]+1;
+					if(config.data2Fader(message.slice(9)) > 1000) {
+						value = 'L ' + (config.data2Fader(message.slice(9)) - 16384)*(-1);
+					} else if (config.data2Fader(message.slice(9)) == 0) {
+						value = 'CENTER';
+					} else {
+						value = 'R ' + config.data2Fader(message.slice(9));
+					}         
+
+                    status.faderPan['channel' + num] = value;
+
+                    outMessage = {
+                        type: "faderPan",
+                        target: "channel",
+                        num: num,
+                        value: value
+                    };
+
+                    break;
+					
+				case config.sysExElements.channelFader:
                     num = message[8]+1;
                     value = config.data2Fader(message.slice(9));
 
@@ -301,6 +608,26 @@ var deviceMessageHandler = function(message) {
                         num: num,
                         value: value
                     };
+                    break;
+
+				 case config.sysExElements.sumPan:
+					if(config.data2Fader(message.slice(9)) > 1000) {
+						value = 'L ' + (config.data2Fader(message.slice(9)) - 16384)*(-1);
+					} else if (config.data2Fader(message.slice(9)) == 0) {
+						value = 'CENTER';
+					} else {
+						value = 'R ' + config.data2Fader(message.slice(9));
+					}         
+
+                    status.faderPan['sum0'] = value;
+
+                    outMessage = {
+                        type: "faderPan",
+                        target: "sum",
+                        num: 0,
+                        value: value
+                    };
+
                     break;
 
                 case config.sysExElements.sumFader:
@@ -447,7 +774,7 @@ var deviceMessageHandler = function(message) {
                     };
                     break;
 
-            }
+            } 
         }
     }
 
@@ -457,7 +784,7 @@ var deviceMessageHandler = function(message) {
     }
     // log unknown messages
     else {
-        console.log('[mixer] Unknown MIDI message: [' + message + ']');
+//        console.log('[mixer] Unknown MIDI message: [' + message + ']');
     }
 };
 
@@ -622,6 +949,40 @@ var setChannelOn = function(channel, on) {
     status.on['channel' + channel] = on;
 };
 
+var setChannelGate = function(channel,parameter) {
+    if(channel < 1 || channel > config.channelCount) {
+        console.log('[mixer] Invalid channel number ' + channel + ' (on)');
+        return;
+    }
+
+    if(parameter.length != status.faderGate.length) {
+        console.log('[mixer] Invalid parameter length ' + parameter.length + ' (faderGate length:' + status.faderGate.length + ')');
+        return;
+    }
+
+    for(j = 0; j < status.faderGate.length; j++) {
+        device.send(
+            config.parameterChange(
+                [config.sysExElements.faderGate,j,channel-1].concat(config.fader2Data(parameter[Object.keys(parameter)[j]]))
+            )
+        );
+    }
+};
+
+// add comp, eq, ... 
+
+for(i = 0; i < config.channelCount; i++) {
+
+    for(j = 0; j < status.faderEQ.length; j++) {
+        device.send(
+            config.parameterRequest(
+                [config.sysExElements.channelEQ,i,j]
+            )
+        );
+    }
+};
+
+
 var setSumFader = function(value) {
     device.send(
         config.parameterChange(
@@ -730,17 +1091,34 @@ var sendRemoteMeterRequest = function() {
     device.send(config.remoteMeterRequest);
 };
 
+var sendFaderNameRequest = function() {
+	device.send(config.remoteFaderNameRequest);
+	
+	// character count
+	config.remoteFaderNameRequest[7]++;
+	if(config.remoteFaderNameRequest[7] > 0x13) {
+		config.remoteFaderNameRequest[7] = 0x04;
+	
+		// channel number
+		config.remoteFaderNameRequest[8]++;
+		if(config.remoteFaderNameRequest[8] > 0x1F){
+			config.remoteFaderNameRequest[8] = 0x00;
+		}
+	}
+};
+
 var sendSyncRequest = function() {
     var i, j, limit, auxSendParam;
 
     for(i in config.sysExElements) {
         if(config.sysExElements.hasOwnProperty(i)) {
 
-            // aux sends are handled later
-            if(i.indexOf('auxSend') === 0) {
+            // multiple parameter per channel sends are handled later
+            if(i.indexOf('auxSend') === 0 || i.indexOf('channelGate') === 0 || i.indexOf('channelComp') === 0 || i.indexOf('channelEQ') === 0 || i.indexOf('channelDelay') === 0 ) {
                 continue;
             }
 
+            // single parameter per channel
             if(i.indexOf('channel') === 0) {
                 limit = config.channelCount;
             }
@@ -765,6 +1143,7 @@ var sendSyncRequest = function() {
         }
     }
 
+    // multiple parameter per channel
     // aux send: requests for all channels for all aux
     for(i = 1; i <= config.auxSendCount; i++) {
         auxSendParam = config.auxSendParam(i);
@@ -776,7 +1155,57 @@ var sendSyncRequest = function() {
                 )
             );
         }
-    }
+    };
+
+    // channelGate: requests for all parameters for all channel
+    for(i = 0; i < config.channelCount; i++) {
+
+        for(j = 0; j < status.faderGate.length; j++) {
+            device.send(
+                config.parameterRequest(
+                    [config.sysExElements.channelGate,i,j]
+                )
+            );
+        }
+    };
+
+    // channelComp: requests for all parameters for all channel
+    for(i = 0; i < config.channelCount; i++) {
+
+        for(j = 0; j < status.faderComp.length; j++) {
+            device.send(
+                config.parameterRequest(
+                    [config.sysExElements.channelComp,i,j]
+                )
+            );
+        }
+    };
+
+    // channelEQ: requests for all parameters for all channel
+    for(i = 0; i < config.channelCount; i++) {
+
+        for(j = 0; j < status.faderEQ.length; j++) {
+            device.send(
+                config.parameterRequest(
+                    [config.sysExElements.channelEQ,i,j]
+                )
+            );
+        }
+    };
+
+    // channelDelay: requests for all parameters for all channel
+    for(i = 0; i < config.channelCount; i++) {
+
+        for(j = 0; j < status.faderDelay.length; j++) {
+            device.send(
+                config.parameterRequest(
+                    [config.sysExElements.channelDelay,i,j]
+                )
+            );
+        }
+    };
+
+
 
 };
 

@@ -22,6 +22,9 @@ var remoteApp = {
 		// maximal value for fader messages
 		maxFaderValue: 255,
 		
+		// empty string for fader names
+		emptyName: ' ',
+		
 		// height difference #content-.fader for computation fallback [e.g. CSS calc(100% - 210px)] 
 		faderHeightDifference: 210,
 
@@ -48,8 +51,8 @@ var remoteApp = {
 		 * targets: channel, sum, aux, bus
 		 */
 		controls: {
-			ch116: {
-				label: "CH 1-16",
+			home: {
+				label: "HOME",
 				faders: [
 					["channel", 1, "1"],
 					["channel", 2, "2"],
@@ -67,13 +70,6 @@ var remoteApp = {
 					["channel", 14, "14"],
 					["channel", 15, "15"],
 					["channel", 16, "16"],
-					["sum", 0, "S"]
-				]
-			},
-			
-			ch1732: {
-				label: "CH 17-32",
-				faders: [
 					["channel", 17, "17"],
 					["channel", 18, "18"],
 					["channel", 19, "19"],
@@ -93,6 +89,7 @@ var remoteApp = {
 					["sum", 0, "S"]
 				]
 			},
+
 			
 			aux1: {
 				label: "AUX 1",
@@ -113,6 +110,22 @@ var remoteApp = {
 					["auxsend", 14, "14", 1],
 					["auxsend", 15, "15", 1],
 					["auxsend", 16, "16", 1],
+					["auxsend", 17, "17", 1],
+					["auxsend", 18, "18", 1],
+					["auxsend", 19, "19", 1],
+					["auxsend", 20, "20", 1],
+					["auxsend", 21, "21", 1],
+					["auxsend", 22, "22", 1],
+					["auxsend", 23, "23", 1],
+					["auxsend", 24, "24", 1],
+					["auxsend", 25, "25", 1],
+					["auxsend", 26, "26", 1],
+					["auxsend", 27, "27", 1],
+					["auxsend", 28, "28", 1],
+					["auxsend", 29, "29", 1],
+					["auxsend", 30, "30", 1],
+					["auxsend", 31, "31", 1],
+					["auxsend", 32, "32", 1],
 					["sum", 0, "S"]
 				]
 			},
@@ -136,6 +149,22 @@ var remoteApp = {
                     ["auxsend", 14, "14", 2],
                     ["auxsend", 15, "15", 2],
                     ["auxsend", 16, "16", 2],
+					["auxsend", 17, "17", 2],
+					["auxsend", 18, "18", 2],
+					["auxsend", 19, "19", 2],
+					["auxsend", 20, "20", 2],
+					["auxsend", 21, "21", 2],
+					["auxsend", 22, "22", 2],
+					["auxsend", 23, "23", 2],
+					["auxsend", 24, "24", 2],
+					["auxsend", 25, "25", 2],
+					["auxsend", 26, "26", 2],
+					["auxsend", 27, "27", 2],
+					["auxsend", 28, "28", 2],
+					["auxsend", 29, "29", 2],
+					["auxsend", 30, "30", 2],
+					["auxsend", 31, "31", 2],
+					["auxsend", 32, "32", 2],
                     ["sum", 0, "S"]
                 ]
             },
@@ -159,6 +188,22 @@ var remoteApp = {
                     ["auxsend", 14, "14", 3],
                     ["auxsend", 15, "15", 3],
                     ["auxsend", 16, "16", 3],
+					["auxsend", 17, "17", 3],
+					["auxsend", 18, "18", 3],
+					["auxsend", 19, "19", 3],
+					["auxsend", 20, "20", 3],
+					["auxsend", 21, "21", 3],
+					["auxsend", 22, "22", 3],
+					["auxsend", 23, "23", 3],
+					["auxsend", 24, "24", 3],
+					["auxsend", 25, "25", 3],
+					["auxsend", 26, "26", 3],
+					["auxsend", 27, "27", 3],
+					["auxsend", 28, "28", 3],
+					["auxsend", 29, "29", 3],
+					["auxsend", 30, "30", 3],
+					["auxsend", 31, "31", 3],
+					["auxsend", 32, "32", 3],
                     ["sum", 0, "S"]
                 ]
             },
@@ -182,6 +227,178 @@ var remoteApp = {
                     ["auxsend", 14, "14", 4],
                     ["auxsend", 15, "15", 4],
                     ["auxsend", 16, "16", 4],
+					["auxsend", 17, "17", 4],
+					["auxsend", 18, "18", 4],
+					["auxsend", 19, "19", 4],
+					["auxsend", 20, "20", 4],
+					["auxsend", 21, "21", 4],
+					["auxsend", 22, "22", 4],
+					["auxsend", 23, "23", 4],
+					["auxsend", 24, "24", 4],
+					["auxsend", 25, "25", 4],
+					["auxsend", 26, "26", 4],
+					["auxsend", 27, "27", 4],
+					["auxsend", 28, "28", 4],
+					["auxsend", 29, "29", 4],
+					["auxsend", 30, "30", 4],
+					["auxsend", 31, "31", 4],
+					["auxsend", 32, "32", 4],
+                    ["sum", 0, "S"]
+                ]
+            },
+			
+			aux5: {
+                label: "AUX 5",
+                faders: [
+                    ["auxsend", 1, "1", 5],
+                    ["auxsend", 2, "2", 5],
+                    ["auxsend", 3, "3", 5],
+                    ["auxsend", 4, "4", 5],
+                    ["auxsend", 5, "5", 5],
+                    ["auxsend", 6, "6", 5],
+                    ["auxsend", 7, "7", 5],
+                    ["auxsend", 8, "8", 5],
+                    ["auxsend", 9, "9", 5],
+                    ["auxsend", 10, "10", 5],
+                    ["auxsend", 11, "11", 5],
+                    ["auxsend", 12, "12", 5],
+                    ["auxsend", 13, "13", 5],
+                    ["auxsend", 14, "14", 5],
+                    ["auxsend", 15, "15", 5],
+                    ["auxsend", 16, "16", 5],
+					["auxsend", 17, "17", 5],
+					["auxsend", 18, "18", 5],
+					["auxsend", 19, "19", 5],
+					["auxsend", 20, "20", 5],
+					["auxsend", 21, "21", 5],
+					["auxsend", 22, "22", 5],
+					["auxsend", 23, "23", 5],
+					["auxsend", 24, "24", 5],
+					["auxsend", 25, "25", 5],
+					["auxsend", 26, "26", 5],
+					["auxsend", 27, "27", 5],
+					["auxsend", 28, "28", 5],
+					["auxsend", 29, "29", 5],
+					["auxsend", 30, "30", 5],
+					["auxsend", 31, "31", 5],
+					["auxsend", 32, "32", 5],
+                    ["sum", 0, "S"]
+                ]
+            },
+			
+			aux6: {
+                label: "AUX 6",
+                faders: [
+                    ["auxsend", 1, "1", 6],
+                    ["auxsend", 2, "2", 6],
+                    ["auxsend", 3, "3", 6],
+                    ["auxsend", 4, "4", 6],
+                    ["auxsend", 5, "5", 6],
+                    ["auxsend", 6, "6", 6],
+                    ["auxsend", 7, "7", 6],
+                    ["auxsend", 8, "8", 6],
+                    ["auxsend", 9, "9", 6],
+                    ["auxsend", 10, "10", 6],
+                    ["auxsend", 11, "11", 6],
+                    ["auxsend", 12, "12", 6],
+                    ["auxsend", 13, "13", 6],
+                    ["auxsend", 14, "14", 6],
+                    ["auxsend", 15, "15", 6],
+                    ["auxsend", 16, "16", 6],
+					["auxsend", 17, "17", 6],
+					["auxsend", 18, "18", 6],
+					["auxsend", 19, "19", 6],
+					["auxsend", 20, "20", 6],
+					["auxsend", 21, "21", 6],
+					["auxsend", 22, "22", 6],
+					["auxsend", 23, "23", 6],
+					["auxsend", 24, "24", 6],
+					["auxsend", 25, "25", 6],
+					["auxsend", 26, "26", 6],
+					["auxsend", 27, "27", 6],
+					["auxsend", 28, "28", 6],
+					["auxsend", 29, "29", 6],
+					["auxsend", 30, "30", 6],
+					["auxsend", 31, "31", 6],
+					["auxsend", 32, "32", 6],
+                    ["sum", 0, "S"]
+                ]
+            },
+			
+			aux7: {
+                label: "AUX 7",
+                faders: [
+                    ["auxsend", 1, "1", 7],
+                    ["auxsend", 2, "2", 7],
+                    ["auxsend", 3, "3", 7],
+                    ["auxsend", 4, "4", 7],
+                    ["auxsend", 5, "5", 7],
+                    ["auxsend", 6, "6", 7],
+                    ["auxsend", 7, "7", 7],
+                    ["auxsend", 8, "8", 7],
+                    ["auxsend", 9, "9", 7],
+                    ["auxsend", 10, "10", 7],
+                    ["auxsend", 11, "11", 7],
+                    ["auxsend", 12, "12", 7],
+                    ["auxsend", 13, "13", 7],
+                    ["auxsend", 14, "14", 7],
+                    ["auxsend", 15, "15", 7],
+                    ["auxsend", 16, "16", 7],
+					["auxsend", 17, "17", 7],
+					["auxsend", 18, "18", 7],
+					["auxsend", 19, "19", 7],
+					["auxsend", 20, "20", 7],
+					["auxsend", 21, "21", 7],
+					["auxsend", 22, "22", 7],
+					["auxsend", 23, "23", 7],
+					["auxsend", 24, "24", 7],
+					["auxsend", 25, "25", 7],
+					["auxsend", 26, "26", 7],
+					["auxsend", 27, "27", 7],
+					["auxsend", 28, "28", 7],
+					["auxsend", 29, "29", 7],
+					["auxsend", 30, "30", 7],
+					["auxsend", 31, "31", 7],
+					["auxsend", 32, "32", 7],
+                    ["sum", 0, "S"]
+                ]
+            },
+			
+			aux8: {
+                label: "AUX 8",
+                faders: [
+                    ["auxsend", 1, "1", 8],
+                    ["auxsend", 2, "2", 8],
+                    ["auxsend", 3, "3", 8],
+                    ["auxsend", 4, "4", 8],
+                    ["auxsend", 5, "5", 8],
+                    ["auxsend", 6, "6", 8],
+                    ["auxsend", 7, "7", 5],
+                    ["auxsend", 8, "8", 8],
+                    ["auxsend", 9, "9", 8],
+                    ["auxsend", 10, "10", 8],
+                    ["auxsend", 11, "11", 8],
+                    ["auxsend", 12, "12", 8],
+                    ["auxsend", 13, "13", 8],
+                    ["auxsend", 14, "14", 8],
+                    ["auxsend", 15, "15", 8],
+                    ["auxsend", 16, "16", 8],
+					["auxsend", 17, "17", 8],
+					["auxsend", 18, "18", 8],
+					["auxsend", 19, "19", 8],
+					["auxsend", 20, "20", 8],
+					["auxsend", 21, "21", 8],
+					["auxsend", 22, "22", 8],
+					["auxsend", 23, "23", 8],
+					["auxsend", 24, "24", 8],
+					["auxsend", 25, "25", 8],
+					["auxsend", 26, "26", 8],
+					["auxsend", 27, "27", 8],
+					["auxsend", 28, "28", 8],
+					["auxsend", 29, "29", 8],
+					["auxsend", 30, "30", 8],
+					["auxsend", 31, "31", 8],
+					["auxsend", 32, "32", 8],
                     ["sum", 0, "S"]
                 ]
             },
@@ -234,6 +451,12 @@ var remoteApp = {
 		// current fader values
 		fader: {},
 		
+		// current faderPan values
+		faderPan: {},
+		
+		// current faderName values
+		faderName: {},
+		
 		// current channel levels
 		level: {},
 		
@@ -248,7 +471,26 @@ var remoteApp = {
 		movedFaders: {},
 		
 		// initial waiting for document.ready and socket initialization
-		pendingOperations: 2
+		pendingOperations: 2,
+
+		// calculate dB value for faders
+		calcFaderDB: function(value, target) {
+			var faderDB = '';
+			if(target == 'channel' || target == 'auxsend') {
+				if (value < 2) {
+					faderDB = '-&infin;';
+				} else if(value < 3) {
+					faderDB = -96;
+				} else if(value < 12) {
+					faderDB = -90 + (value-3)*5;
+				} else if(value < 23) {
+					faderDB = -49,17 + Math.round((value-12)*1,16);
+				}
+			} else {
+
+			}
+			return ((faderDB > 0)? '+' : '') + faderDB;
+		}
 	},
 	
 	/**
@@ -361,13 +603,14 @@ var remoteApp = {
 	 */
 	generatePage: function() {
 		var app = this,
-
 			generateControl = function(tab, target, num, bigLabel, num2) {
 				var id = target + (num2 || '') + num;
 				
 				// set intial status values
 				if(typeof app.status.on[id] == 'undefined') {
 					app.status.fader[id] = app.config.maxFaderValue;
+					app.status.faderPan[id] = app.config.maxFaderValue;
+					app.status.faderName[id] = app.config.emptyName;
 					
 					if(target != 'auxsend') {
 						app.status.on[id] = true;
@@ -376,26 +619,32 @@ var remoteApp = {
 				}
 				
 				// generate HTML
-				return '<div class="control" data-id="' + id + '" data-target="' + target + '" data-number="' + num + '" data-number2="' + (num2 || '') + '">\
+				return '<div class="control"' + (target == 'sum' ? ' style="width: 100%;"' : '') + ' " data-id="' + id + '" data-target="' + target + '" data-number="' + num + '" data-number2="' + (num2 || '') + '">\
 					<div class="on-button">\
 						ON\
 					</div>\
 					<div class="group"></div>\
 					\
+					<div class="pan">&nbsp;</div>\
+					\
 					<div class="fader">\
+						<div class="fader-ticks">\
 						<div class="fader-bar">\
 							<div class="fader-background"></div>\
 							<div class="fader-level" style="height:100%"></div>\
 						</div>\
+						</div>\
 						\
-						<div class="fader-handle' + (target == 'sum' ? ' fader-handle-sum' : '') + '"></div>\
+						<div class="fader-handle' + (target == 'sum' ? ' fader-handle-sum' : '') + '">100%</div>\
 					</div>\
 					\
+					<div class="fader-label">&nbsp;</div>\
+					<div class="fader-select">\
 					<div class="fader-biglabel">' +
 						bigLabel +
 					'</div>\
+					</div>\
 					\
-					<div class="fader-label">&nbsp;</div>\
 				</div>';
 			},
 
@@ -432,21 +681,26 @@ var remoteApp = {
 
                 naviHtml += generateTab(tabid, tab.label, tab.title, tabIsActive);
 
-                contentHtml += '<div class="tabcontent autogenerated" data-tab="' + tabid + '"' + (tabIsActive ? ' style="display:block"' : '') + '>';
+                contentHtml += '<div class="tabcontent autogenerated" data-tab="' + tabid + '"' + (tabIsActive ? ' style="display:block"' : '') + '>' + '<div class="tabcontent_left">';
 
-                for(i = 0; i < tab.faders.length; i++) {
+                for(i = 0; i < tab.faders.length-1; i++) {
                     fader = tab.faders[i];
                     contentHtml += generateControl(tabid, fader[0], fader[1], fader[2], fader[3]);
                 }
 
-                contentHtml += '</div>';
+                contentHtml += '</div> <div class="tabcontent_right">';
+				
+				fader = tab.faders[tab.faders.length-1];
+                contentHtml += generateControl(tabid, fader[0], fader[1], fader[2], fader[3]);
+
+                contentHtml += '</div> </div>';
 
                 firstTab = false;
             }
 		}
-
-        // generate configuration inputs
-
+		
+		// generate configuration inputs
+		
         for(i = 1; i <= app.config.channelCount; i++) {
             configChannelHtml += generateConfigurationInput('channel'+i, i);
         }
@@ -530,6 +784,13 @@ var remoteApp = {
 			app.eventAbstraction.onButton(
 				$(this).parents('.control')
 			);
+		});
+		
+		// select-buttons
+		$content.on('click', '.fader-select', function() {
+
+				app.switchTab('configuration', null);
+
 		});
 		
 		// tab navigation
@@ -675,7 +936,7 @@ var remoteApp = {
 			var newPositionPx = $control.data('originalPosition')+position - $control.data('touchPosition'),
 				newPositionPercent = newPositionPx/app.status.faderHeight * 100,
 				newValue;
-			
+
 			if(newPositionPercent < 0) {
 				newPositionPercent = 0;
 			}
@@ -683,7 +944,7 @@ var remoteApp = {
 				newPositionPercent = app.config.maxHandlePercent;
 			}
 			
-			$handle.css('top', newPositionPercent + '%');
+			$handle.css('top', newPositionPercent + '%');	
 			
 			// compute and send new value
 			newValue = Math.round(
@@ -696,6 +957,7 @@ var remoteApp = {
 			}
 			
 			app.status.fader[id] = newValue;
+			$handle.html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%');
 
             // apply to all faders of group
             if(target === 'channel' || target === 'auxsend') {
@@ -711,6 +973,7 @@ var remoteApp = {
                             if(groupId !== num) {
                                 app.status.fader[target + (num2 || '') + groupId] = newValue;
                                 $controls.filter('[data-target="' + target + '"][data-number="' + groupId + '"]').find('.fader-handle').css('top', newPositionPercent + '%');
+								$controls.filter('[data-target="' + target + '"][data-number="' + groupId + '"]').find('.fader-handle').html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%');
                             }
                         }
 
@@ -847,7 +1110,7 @@ var remoteApp = {
 	/**
 	 * handles socket messages, updates application status and control displays
 	 * @param {object} message
-	 *		properties: type (on, fader, level), target (channel, sum, aux, bus, auxsend), num, num2, value
+	 *		properties: type (on, fader, faderPan, faderName, level), target (channel, sum, aux, bus, auxsend), num, num2, value
 	 */
 	messageHandler: function(message) {
 		var app = this,
@@ -867,29 +1130,34 @@ var remoteApp = {
         // complete sync
         else if(message.type === 'sync') {
             app.status.fader = message.status.fader;
+			app.status.faderPan = message.status.faderPan;
+			app.status.faderName = message.status.faderName;
             app.status.on = message.status.on;
 
-            app.updateTabControls(false, {fader: true, on: true});
+            app.updateTabControls(false, {fader: true, faderPan: true, faderName: true, on: true});
 
             $('#loading-dialog').fadeOut(400);
         }
-        // configuration
+        /* configuration
         else if(message.type === 'config') {
             app.config.persistent = message.config;
             app.refreshConfiguration();
+        } */
+		//  faderName message
+        else if(app.status[message.type] && message.type === 'faderName') {
+			app.status[message.type][id] = message.value;
         }
 		// update fader and on-button per channel
 		else if(app.status[message.type] && app.status[message.type][id] !== message.value) {
-			
+	
 			// determine if control is currently visible
 			if(app.config.controls[app.status.activeTab]) {
-				controls = app.config.controls[app.status.activeTab].faders;
-				
+				controls = app.config.controls[app.status.activeTab].faders;	
 				for(i in controls) {
-					if(controls[i][0] == message.target &&
+					if((controls[i][0] == message.target) &&
 						(!message.num || controls[i][1] == message.num) &&
 						(!message.num2 || controls[i][3] == message.num2)) {
-						controlIsVisible = true;
+						controlIsVisible = true;	
 					}
 					else if(controls[i][0] == 'auxsend' &&
 							controls[i][1] == message.num) {
@@ -897,14 +1165,14 @@ var remoteApp = {
 					}
 				}
 			}
-			
+				
 			app.status[message.type][id] = message.value;
-			
+	
 			if(controlIsVisible) {
 				updateType = {};
 				updateType[message.type] = true;
-				
 				app.updateControl(message.target, message.num, message.num2, updateType);
+
 			}
 		}
 	},
@@ -931,7 +1199,7 @@ var remoteApp = {
 	
 	/**
 	 * updates a control to display its current values
-	 * @param {String} target channel, sum, aux, bus
+	 * @param {String} target channel, channelPan, sum, aux, bus
      * @param {int} num
      * @param {int} num2
 	 * @param {object} update which values shall be updated (type: true); default all
@@ -950,6 +1218,8 @@ var remoteApp = {
 			update = {
 				on: true,
 				fader: true,
+				faderPan: true,
+				faderName: true,
 				level: true
 			};
 		}
@@ -973,10 +1243,15 @@ var remoteApp = {
 		}
 		
 		// update fader position if fader is not being moved
-		if(update.fader && !app.status.movedFaders[id]) {
+		if((update.fader || update.faderPan) && !app.status.movedFaders[id]) {
 			faderPercent = (1 - app.status.fader[id]/app.config.maxFaderValue) * app.config.maxHandlePercent;
 			$control.find('.fader-handle').css('top', faderPercent + '%');
+			$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%\n' + app.status.calcFaderDB(app.status.fader[id], target) + ' dB');
+			$control.find('.pan').html(app.status.faderPan[id]);
 		}
+		
+		$control.find('.fader-label').html(app.status.faderName[id]);
+
 		
 		// update displayed meter level
 		if(update.level) {
