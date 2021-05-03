@@ -1,5 +1,7 @@
 # 01v96 Remote
 
+WORK IN PROGRESS  -- not usable right now  || shortylight
+
 by Michael Strobel
 
 This application is a MIDI bridge to the Yamaha 01v96 mixing console to remote-control it over a network-based connection via WebSocket.
