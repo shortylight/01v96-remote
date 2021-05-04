@@ -492,18 +492,56 @@ var remoteApp = {
 		calcFaderDB: function(value, target) {
 			var faderDB = '';
 			if(target == 'channel' || target == 'auxsend') {
-				if (value < 2) {
-					faderDB = '-&infin;';
-				} else if(value < 3) {
+				if(value < 3) {
 					faderDB = -96;
-				} else if(value < 12) {
+				} else if(value < 11) {
 					faderDB = -90 + (value-3)*5;
 				} else if(value < 23) {
-					faderDB = -49,17 + Math.round((value-12)*1,16);
+					faderDB = -50 + (value-11)*0.8336;
+				} else if (value < 43) {
+					faderDB = -40 + (value-23)*0.5;
+				} else if (value < 79) {
+					faderDB = -30 + (value-43)*0.2777;
+				} else if (value < 105) {
+					faderDB = -20 + (value-79)*0.1924;
+				} else if (value < 143) {
+					faderDB = -15 + (value-105)*0.1282;
+				} else if (value < 179) {
+					faderDB = -10 + (value-143)*0.1389;
+				} else if (value < 207) {
+					faderDB = -5 + (value-179)*0.1785;
+				} else {
+					faderDB = (value-207)*0.2083;
 				}
 			} else {
-
+				// sum, aux, bus
+				if(value < 3) {
+					faderDB = -130;
+				} else if(value < 21) {
+					faderDB = -120 + (value-3)*2.7776;
+				} else if(value < 29) {
+					faderDB = -70 + (value-11)*1.25;
+				} else if (value < 47) {
+					faderDB = -60 + (value-21)*0.5553;
+				} else if (value < 75) {
+					faderDB = -50 + (value-47)*0.357;
+				} else if (value < 105) {
+					faderDB = -40 + (value-75)*0.3334;
+				} else if (value < 147) {
+					faderDB = -30 + (value-105)*0.2380;
+				} else if (value < 177) {
+					faderDB = -20 + (value-147)*0.1666;
+				} else if (value < 203) {
+					faderDB = -15 + (value-177)*0.1924;
+				} else if (value < 233) {
+					faderDB = -10 + (value-203)*0.1666;
+				} else {
+					faderDB = -5 + (value-233)*0.2273;
+				}
 			}
+			faderDB = Math.round(faderDB);
+			if (value < 2) faderDB = '-&infin;';
+console.log('value: ' + value + ' dB: ' + faderDB);
 			return ((faderDB > 0)? '+' : '') + faderDB;
 		}
 	},
@@ -972,7 +1010,7 @@ var remoteApp = {
 			}
 			
 			app.status.fader[id] = newValue;
-			$handle.html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%');
+			$handle.html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.calcFaderDB(app.status.fader[id], target) + 'dB');
 
 			// apply to all faders of pair
 			if((target === 'channel' || target === 'auxsend') && (app.status.faderPair.Pair && app.status.faderPair.Pair[id] == 1)) {
@@ -996,7 +1034,7 @@ var remoteApp = {
                             if(groupId !== num) {
                                 app.status.fader[target + (num2 || '') + groupId] = newValue;
                                 $controls.filter('[data-target="' + target + '"][data-number="' + groupId + '"]').find('.fader-handle').css('top', newPositionPercent + '%');
-								$controls.filter('[data-target="' + target + '"][data-number="' + groupId + '"]').find('.fader-handle').html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%');
+								$controls.filter('[data-target="' + target + '"][data-number="' + groupId + '"]').find('.fader-handle').html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent))  + '%<br>' + app.status.calcFaderDB(app.status.fader[id], target) + 'dB');
                             }
                         }
 
@@ -1294,7 +1332,7 @@ console.log(num);
 		if((update.fader || update.faderPan) && !app.status.movedFaders[id]) {
 			faderPercent = (1 - app.status.fader[id]/app.config.maxFaderValue) * app.config.maxHandlePercent;
 			$control.find('.fader-handle').css('top', faderPercent + '%');
-			$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%\n' + app.status.calcFaderDB(app.status.fader[id], target) + ' dB');
+			$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.calcFaderDB(app.status.fader[id], target) + 'dB');
 			$control.find('.pan').html(app.status.faderPan[id]);
 		}
 		
