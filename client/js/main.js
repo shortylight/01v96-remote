@@ -541,7 +541,6 @@ var remoteApp = {
 			}
 			faderDB = Math.round(faderDB);
 			if (value < 2) faderDB = '-&infin;';
-console.log('value: ' + value + ' dB: ' + faderDB);
 			return ((faderDB > 0)? '+' : '') + faderDB;
 		}
 	},
@@ -1017,7 +1016,7 @@ console.log('value: ' + value + ' dB: ' + faderDB);
 
 				pairNum = num + ((num % 2) ?  1 : (-1));
 				$controls.filter('[data-target="' + target + '"][data-number="' + pairNum + '"]').find('.fader-handle').css('top', newPositionPercent + '%');
-				$controls.filter('[data-target="' + target + '"][data-number="' + pairNum + '"]').find('.fader-handle').html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%');
+				$controls.filter('[data-target="' + target + '"][data-number="' + pairNum + '"]').find('.fader-handle').html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.calcFaderDB(app.status.fader[id], target) + 'dB');
 			};
 
             // apply to all faders of group
