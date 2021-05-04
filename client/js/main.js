@@ -29,7 +29,7 @@ var remoteApp = {
 		faderHeightDifference: 210,
 
         // minimum distance to send fader change value
-		faderMoveMinValueDistance: 5,
+		faderMoveMinValueDistance: 3,
 		
 		// maximal value for level display
 		maxLevelValue: 32,
@@ -456,6 +456,21 @@ var remoteApp = {
 		
 		// current faderName values
 		faderName: {},
+
+		// current faderGate values for all properties
+		faderGate: {},
+
+		// current faderComp values for all properties
+		faderComp: {},
+
+		// current faderEQ values for all properties
+		faderEQ: {},
+
+		// current faderDelay values for all properties
+		faderDelay: {},
+
+		// current faderPair values for all properties
+		faderPair: {},
 		
 		// current channel levels
 		level: {},
@@ -624,6 +639,7 @@ var remoteApp = {
 						ON\
 					</div>\
 					<div class="group"></div>\
+					<div class="pair"></div>\
 					\
 					<div class="pan">&nbsp;</div>\
 					\
@@ -639,7 +655,7 @@ var remoteApp = {
 					</div>\
 					\
 					<div class="fader-label">&nbsp;</div>\
-					<div class="fader-select">\
+					<div class="fader-select" id="' + num + '">\
 					<div class="fader-biglabel">' +
 						bigLabel +
 					'</div>\
@@ -788,9 +804,8 @@ var remoteApp = {
 		
 		// select-buttons
 		$content.on('click', '.fader-select', function() {
-
-				app.switchTab('configuration', null);
-
+			var $this = $(this);
+			app.switchTab('configuration', null, $this.attr('id'));
 		});
 		
 		// tab navigation
@@ -926,7 +941,7 @@ var remoteApp = {
 
                 $controls = $('.control:visible'),
 
-                groupId, i, j;
+                pairNum, groupId, i, j;
 
             if(!app.status.movedFaders[id]) {
                 return;
@@ -958,6 +973,14 @@ var remoteApp = {
 			
 			app.status.fader[id] = newValue;
 			$handle.html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%');
+
+			// apply to all faders of pair
+			if((target === 'channel' || target === 'auxsend') && (app.status.faderPair.Pair && app.status.faderPair.Pair[id] == 1)) {
+
+				pairNum = num + ((num % 2) ?  1 : (-1));
+				$controls.filter('[data-target="' + target + '"][data-number="' + pairNum + '"]').find('.fader-handle').css('top', newPositionPercent + '%');
+				$controls.filter('[data-target="' + target + '"][data-number="' + pairNum + '"]').find('.fader-handle').html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%');
+			};
 
             // apply to all faders of group
             if(target === 'channel' || target === 'auxsend') {
@@ -1090,12 +1113,12 @@ var remoteApp = {
 	 * @param {String} id
 	 * @param {jQuery} $this optional jQuery object of the selected tab
 	 */
-	switchTab: function(id, $this) {
+	switchTab: function(id, $this, num) {
 		var app = this,
 			$navi = $('#navi'),
 			$tab = $this || $navi.find('li[data-tab="' + id + '"]'),
 			id = $tab.data('tab');
-			
+console.log(num);		
 		app.updateTabControls(id);
 		
 		$('.tabcontent[data-tab="' + app.status.activeTab + '"]').hide();
@@ -1110,7 +1133,7 @@ var remoteApp = {
 	/**
 	 * handles socket messages, updates application status and control displays
 	 * @param {object} message
-	 *		properties: type (on, fader, faderPan, faderName, level), target (channel, sum, aux, bus, auxsend), num, num2, value
+	 *		properties: type (on, fader, faderPan, faderName, faderComp, faderDelay, faderEQ, faderGate, faderPair, level), target (channel, sum, aux, bus, auxsend), num, num2, value, prop
 	 */
 	messageHandler: function(message) {
 		var app = this,
@@ -1118,7 +1141,7 @@ var remoteApp = {
 			controlIsVisible = false,
 			
 			controls, i, updateType;
-		
+
 		// update all levels with one message
 		if(message.type === 'level') {
 			for(i in message.levels) {
@@ -1132,9 +1155,13 @@ var remoteApp = {
             app.status.fader = message.status.fader;
 			app.status.faderPan = message.status.faderPan;
 			app.status.faderName = message.status.faderName;
+			app.status.faderGate = message.status.faderGate;
+			app.status.faderComp = message.status.faderComp;
+			app.status.faderEQ = message.status.faderEQ;
+			app.status.faderDelay = message.status.faderDelay;
+			app.status.faderPair = message.status.faderPair;
             app.status.on = message.status.on;
-
-            app.updateTabControls(false, {fader: true, faderPan: true, faderName: true, on: true});
+            app.updateTabControls(false, {fader: true, faderPan: true, faderName: true, faderPair: true, on: true});
 
             $('#loading-dialog').fadeOut(400);
         }
@@ -1146,6 +1173,26 @@ var remoteApp = {
 		//  faderName message
         else if(app.status[message.type] && message.type === 'faderName') {
 			app.status[message.type][id] = message.value;
+        }
+		else if(app.status[message.type] && message.type === 'faderPair') {
+			//console.log('app.status['+message.type+']['+message.prop+']['+id+'] ' + app.status[message.type][message.prop][id]);
+			app.status[message.type][message.prop][id] = message.value;
+        }
+		else if(app.status[message.type] && message.type === 'faderGate') {
+			//console.log('app.status['+message.type+']['+message.prop+']['+id+'] ' + app.status[message.type][message.prop][id]);
+			app.status[message.type][message.prop][id] = message.value;
+        }
+		else if(app.status[message.type] && message.type === 'faderComp') {
+			//console.log('app.status['+message.type+']['+message.prop+']['+id+'] ' + app.status[message.type][message.prop][id]);
+			app.status[message.type][message.prop][id] = message.value;
+        }
+		else if(app.status[message.type] && message.type === 'faderEQ') {
+			//console.log('app.status['+message.type+']['+message.prop+']['+id+'] ' + app.status[message.type][message.prop][id]);
+			app.status[message.type][message.prop][id] = message.value;
+        }
+		else if(app.status[message.type] && message.type === 'faderDelay') {
+			//console.log('app.status['+message.type+']['+message.prop+']['+id+'] ' + app.status[message.type][message.prop][id]);
+			app.status[message.type][message.prop][id] = message.value;
         }
 		// update fader and on-button per channel
 		else if(app.status[message.type] && app.status[message.type][id] !== message.value) {
@@ -1220,6 +1267,7 @@ var remoteApp = {
 				fader: true,
 				faderPan: true,
 				faderName: true,
+				faderPair: true,
 				level: true
 			};
 		}
@@ -1250,9 +1298,22 @@ var remoteApp = {
 			$control.find('.pan').html(app.status.faderPan[id]);
 		}
 		
-		$control.find('.fader-label').html(app.status.faderName[id]);
+		// update fader names
+		if(update.faderName) {
+			$control.find('.fader-label').html(app.status.faderName[id]);
+		};
 
-		
+		// update pairings of channels
+		var colorVar;
+		if(update.faderPair && app.status.faderPair.Pair) {
+			if (app.status.faderPair.Pair[id] == 1) {
+				colorVar = 40 * (Math.floor((id.slice(7) - 1) / 2) % 2) + 50;
+				$control.find('.pair').css('background-color', '#ff' + colorVar + '00');
+			} else {
+				$control.find('.pair').css('background-color', 'transparent');
+			}
+		}
+
 		// update displayed meter level
 		if(update.level) {
 			
@@ -1265,8 +1326,7 @@ var remoteApp = {
 				1 - Math.pow(app.status.level[id], 2) / Math.pow(app.config.maxLevelValue,2)
 			) * 100;
 			$control.find('.fader-level').css('height', levelPercent + '%');
-		}
-		
+		}	
 	},
 
     /**
@@ -1285,7 +1345,7 @@ var remoteApp = {
             color, i, j;
 
         // names
-
+/* 
         $('.fader-label').html('&nbsp;');
         $('#configuration').find('input[type="text"]').val('');
 
@@ -1295,7 +1355,7 @@ var remoteApp = {
                 $('.control[data-target="auxsend"][data-number="' + i.replace(/channel/, '') + '"] .fader-label').html(app.config.persistent.names[i]);
                 $config.find('[data-id="' + i + '"]').val(app.config.persistent.names[i]);
             }
-        }
+        };
 
         // groups
         $('.control .group').css('background', 'transparent');
@@ -1323,10 +1383,9 @@ var remoteApp = {
                 $('.control[data-id="channel' + app.config.persistent.groups[i][j] + '"] .group').css('background', color);
                 $('.control[data-target="auxsend"][data-number="' + app.config.persistent.groups[i][j] + '"] .group').css('background', color);
             }
-
         }
         $('#configuration_groups').val(groupVal);
-
+*/
 
         $('#configuration_loading').hide();
     },
