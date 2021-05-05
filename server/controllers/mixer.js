@@ -157,7 +157,7 @@ var config = {
         0x3E,
         0x0D,
         0x21,		// Remote Meter
-        0x00,		// Address UL - up to 0x22 / 34
+        0x00,		// Address UL - faderpair to 0x22 / 34
         0x00,		// Address LU - up to 5
         0x00,		// Address LL - up to 0x27 / 39
         0,			// Count H
