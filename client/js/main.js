@@ -978,7 +978,7 @@ var remoteApp = {
 
                 $controls = $('.control:visible'),
 
-                pairNum, groupId, i, j;
+                pairNum, groupId, oldID, i, j;
 
             if(!app.status.movedFaders[id]) {
                 return;
@@ -1012,12 +1012,17 @@ var remoteApp = {
 			$handle.html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.calcFaderDB(app.status.fader[id], target) + 'dB');
 
 			// apply to all faders of pair
+			oldID = id;
+			if(target == 'auxsend') {
+				id = 'channel' + num;
+			}
 			if((target === 'channel' || target === 'auxsend') && (app.status.faderPair.Pair && app.status.faderPair.Pair[id] == 1)) {
 
 				pairNum = num + ((num % 2) ?  1 : (-1));
 				$controls.filter('[data-target="' + target + '"][data-number="' + pairNum + '"]').find('.fader-handle').css('top', newPositionPercent + '%');
 				$controls.filter('[data-target="' + target + '"][data-number="' + pairNum + '"]').find('.fader-handle').html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.calcFaderDB(app.status.fader[id], target) + 'dB');
-			};
+			}
+			id = oldID;
 
             // apply to all faders of group
             if(target === 'channel' || target === 'auxsend') {
@@ -1232,7 +1237,7 @@ console.log(num);
 			app.status[message.type][message.prop][id] = message.value;
         }
 		// update fader and on-button per channel
-		else if(app.status[message.type] && app.status[message.type][id] !== message.value) {
+		if(app.status[message.type] && app.status[message.type][id] !== message.value) {
 	
 			// determine if control is currently visible
 			if(app.config.controls[app.status.activeTab]) {
@@ -1256,6 +1261,7 @@ console.log(num);
 				updateType = {};
 				updateType[message.type] = true;
 				app.updateControl(message.target, message.num, message.num2, updateType);
+
 
 			}
 		}
@@ -1332,23 +1338,41 @@ console.log(num);
 			faderPercent = (1 - app.status.fader[id]/app.config.maxFaderValue) * app.config.maxHandlePercent;
 			$control.find('.fader-handle').css('top', faderPercent + '%');
 			$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.calcFaderDB(app.status.fader[id], target) + 'dB');
-			$control.find('.pan').html(app.status.faderPan[id]);
+			if(target == 'auxsend') {
+				if(num2 % 2){ // Ungerade
+					tempId = target + (1 + Math.floor(num2/2)) + num;
+					$control.find('.pan').html(app.status.faderPan[tempId]);
+				}else{
+					tempId = target + (num2/2) + num;
+					$control.find('.pan').html(app.status.faderPan[tempId]);
+				}
+			}else{
+				$control.find('.pan').html(app.status.faderPan[id]);
+			}
 		}
 		
 		// update fader names
 		if(update.faderName) {
+			if(target == 'auxsend') {
+				id = 'channel' + num;
+			}
 			$control.find('.fader-label').html(app.status.faderName[id]);
+			id = oldId;
 		};
 
 		// update pairings of channels
 		var colorVar;
 		if(update.faderPair && app.status.faderPair.Pair) {
+			if(target == 'auxsend') {
+				id = 'channel' + num;
+			}
 			if (app.status.faderPair.Pair[id] == 1) {
 				colorVar = 40 * (Math.floor((id.slice(7) - 1) / 2) % 2) + 50;
 				$control.find('.pair').css('background-color', '#ff' + colorVar + '00');
 			} else {
 				$control.find('.pair').css('background-color', 'transparent');
 			}
+			id = oldId;
 		}
 
 		// update displayed meter level
@@ -1358,7 +1382,6 @@ console.log(num);
 			if(target == 'auxsend') {
 				id = 'channel' + num;
 			}
-			
 			levelPercent = (
 				1 - Math.pow(app.status.level[id], 2) / Math.pow(app.config.maxLevelValue,2)
 			) * 100;

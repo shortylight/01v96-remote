@@ -208,7 +208,7 @@ body {
 
 
 .fader-handle {
-	width:100%;
+	width: calc(100% - 2px);
 	height:15%;
 	position:absolute;
 	top:0;
