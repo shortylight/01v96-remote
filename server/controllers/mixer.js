@@ -850,7 +850,7 @@ var deviceMessageHandler = function (message) {
  * @param socket Client connection
  */
 var clientMessageHandler = function (message, socket) {
-    var i, j, groupId;
+    var i, j, groupId, pairNum, pairAux;
 
     // convert auxsend on to channel on
     if (message.type === 'on' && message.target === 'auxsend') {
@@ -956,9 +956,40 @@ var clientMessageHandler = function (message, socket) {
     if (message.type === 'fader' || message.type === 'on') {
         app.controllers.socket.broadcastToOthers(socket, message);
 
-        // apply to all channels of group
+        // apply to all channels of group or a pair
 
         if (message.target === 'channel' || message.target === 'auxsend') {
+            // pairing partner has to be transferred
+            if(status.faderPair.Pair && status.faderPair.Pair['channel' + message.num] == 1) {
+                pairNum = message.num + ((message.num % 2) ?  1 : (-1));
+                // pairing of channels inside of a tab
+                app.controllers.socket.broadcastToOthers(socket, {
+                    type: message.type,
+                    target: message.target,
+                    num: pairNum,
+                    num2: message.num2,
+                    value: message.value
+                });
+                // pairing of channels in paired aux tabs
+                if(message.target === 'auxsend'){
+                    pairAux = ((message.num2 % 2) ?  1 : (-1))
+                    app.controllers.socket.broadcastToOthers(socket, {
+                        type: message.type,
+                        target: message.target,
+                        num: pairNum,
+                        num2: message.num2 + pairAux,
+                        value: message.value
+                    });
+                    app.controllers.socket.broadcastToOthers(socket, {
+                        type: message.type,
+                        target: message.target,
+                        num: message.num,
+                        num2: message.num2 + pairAux,
+                        value: message.value
+                    });
+                }
+            }
+            
             i = app.clientConfig.groups.length;
 
             while (i--) {
