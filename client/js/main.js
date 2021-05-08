@@ -17,7 +17,7 @@ var remoteApp = {
 		socketPort: 1338,
 		
 		// maximal CSS top value for .fader-handle elements
-		maxHandlePercent: 85,
+		maxHandlePercent: 100,
 		
 		// maximal value for fader messages
 		maxFaderValue: 255,
@@ -27,6 +27,9 @@ var remoteApp = {
 		
 		// height difference #content-.fader for computation fallback [e.g. CSS calc(100% - 210px)] 
 		faderHeightDifference: 210,
+
+		// height of .fader-handle for computation fallback
+		faderHandleHeight: 47,
 
         // minimum distance to send fader change value
 		faderMoveMinValueDistance: 3,
@@ -90,7 +93,6 @@ var remoteApp = {
 				]
 			},
 
-			
 			aux1: {
 				label: "AUX 1",
 				faders: [
@@ -767,6 +769,7 @@ var remoteApp = {
         }
 		
 		$('#navi').prepend(naviHtml).removeClass('hidden');
+		$('#naviDropdownContent').prepend(naviHtml).removeClass('hidden');
 		$('#content').append(contentHtml);
         $('#configuration_channels').html(configChannelHtml);
         $('#configuration_master').html(configMasterHtml);
@@ -791,6 +794,7 @@ var remoteApp = {
 		var app = this,
 			$content = $('#content'),
 			$navi = $('#navi');
+			$naviDropdown = $('#naviDropdown');
 
 
         // add mouse fader events only when pointer events are unavailable
@@ -857,9 +861,22 @@ var remoteApp = {
 				app.toggleFullScreen();
 			}
 		});
+
+		$naviDropdown.on('click', 'li', function() {
+			var $this = $(this);
+			
+			if($this.data('tab')) {
+				app.switchTab($this.data('tab'), $this);
+			}
+			// fullscreen navigation item
+			else if($this.attr('id') == 'toggle-fullscreen') {
+				app.toggleFullScreen();
+			}
+		});
 		
 		// re-compute fader height on window resize
 		$(window).on('resize', function() {
+			app.switchTab(app.status.activeTab, null)
 			app.refreshFaderHeight();
 		});
 
@@ -1095,6 +1112,20 @@ var remoteApp = {
 				$control.addClass('control-disabled');
 			}
 
+			// apply to all buttons of a pair
+			if((target === 'channel' || target === 'auxsend')  && (app.status.faderPair.Pair && app.status.faderPair.Pair[id] == 1)){
+				pairNum = num + ((num % 2) ?  1 : (-1));
+				if(app.status.on['channel' + num] != app.status.on['channel' + pairNum]){
+					app.status.on['channel' + pairNum] = app.status.on['channel' + num]
+				}
+				if(app.status.on['channel' + pairNum]) {
+					$controls.filter('[data-number="' + pairNum + '"]').removeClass('control-disabled');
+				}
+				else {
+					$controls.filter('[data-number="' + pairNum + '"]').addClass('control-disabled');
+				}
+			}
+
             // apply to all buttons of group
             if(target === 'channel') {
                 i = app.config.persistent.groups.length;
@@ -1139,14 +1170,15 @@ var remoteApp = {
 	 */
 	refreshFaderHeight: function() {
 		var app = this,
-			$firstFader = $('.fader:visible').first();
-		
+			$firstFader = $('.fader:visible').first();	
 		if($firstFader.length) {
 			app.status.faderHeight = $firstFader.height();
+			app.config.maxHandlePercent = (app.status.faderHeight - $('.fader-handle:visible').first().height())/app.status.faderHeight*100;
 		}
 		else {
-			// fallback when no faders are visible: compute with container height
+			// fallback when no faders are visible: compute with container height (might not work correct because the faderHeightDifference is not constant)
 			app.status.faderHeight = $('#content').height()-app.config.faderHeightDifference;
+			app.config.maxHandlePercent = (app.status.faderHeight - app.config.faderHandleHeight)/app.status.faderHeight*100;
 		}
 	},
 	
@@ -1169,6 +1201,8 @@ console.log(num);
 		$('.tabcontent[data-tab="' + id + '"]').show();
 		$tab.addClass('active');
 		
+		$("#naviDropdownButton").html((id == 'configuration') ? '<i class="icon-cog"></i>' : $navi.find('li[data-tab="' + id + '"]').text(),);
+
 		app.status.activeTab = id;
 	},
 	
@@ -1574,3 +1608,16 @@ console.log(num);
 
 remoteApp.init();
 
+// Toggle dopdown navigation
+function naviDropdown() {
+	document.getElementById("naviDropdownContent").classList.toggle("show");
+}
+  
+  // Close dropdown when clicking outside
+  window.onclick = function(event) {
+	if (!event.target.matches('#naviDropdownButton')) {
+		if (document.getElementById("naviDropdownContent").classList.contains('show')) {
+			document.getElementById("naviDropdownContent").classList.remove('show');
+		}
+	}
+} 

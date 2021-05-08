@@ -1,12 +1,18 @@
 ﻿body, html {
 	height:100%;
+	width:100%;
+	min-width: 230px;
+	min-height: 400px;
 	padding:0;
 	margin:0;
 }
 
 body {
+	height:100%;
+	width:100%;
+	
 	font-family:Segoe UI, Calibri, Sans-Serif;
-	font-size:16pt;
+	font-size:12pt;
 	color:#fff;
 	
 	background-color:#13222d;
@@ -22,15 +28,16 @@ body {
 }
 
 #wrapper {
-	padding:10px 0.5%;
-	height:97%;
-	height:calc(100% - 20px);
-	min-width:750px;
+	padding:0 0;
+	height:100%;
+	width: 100%;
 }
 
 #top {
+	width: 100%;
+	height: 50px;
 	border-bottom:1px solid #fff;
-	margin:0 -0.5%;
+	margin:0 0;
 	position:relative;
 }
 
@@ -39,22 +46,69 @@ body {
 	font-size:175%;
 	float:right;
 	margin-right:1em;
-	margin-top:-8px;
+	margin-top:10px;
 }
 
-@media screen and (max-width:920px) {
-    #headline {
-        display:none;
-    }
+#naviDropdown {
+	position: relative;
+  	display: none;
+	padding: 5px;
+	min-height:52px;
+}
+
+#naviDropdown.hidden {
+	display: none;
+}
+
+#naviDropdownButton {
+	display:inline-block;
+	cursor:pointer;
+	height: 50px;
+	margin: 0px 1px;
+	padding: 10px 15px;
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+	border: 1px solid #fff;
+	border-bottom:none;
+	background:#13222d;
+	position:relative;
+	top:1px;
+	line-height:29px;
+	padding:11px 14px;
+}
+
+.naviDropdownContentClass {
+	list-style-type:none;
+	display: none;
+	position: absolute;
+	background-color: #13222d;
+	border: 1px solid #fff;
+	margin: 1px 1px;
+	padding: 0;
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+	min-width: 77.4333px;
+	z-index: 1;
+	columns: 2;
+}
+
+.naviDropdownContentClass > li {
+	display:inline-block;
+	cursor:pointer;
+	height: 32px;
+	margin: 1px 1px;
+	padding: 10px 15px;
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+.show {
+	display: block;
 }
 
 #navi {
 	list-style-type:none;
-	margin:0;
-	margin-top:1em;
-	margin-left:.5em;
-	padding:0;
+	margin: 0;
+	padding: 5px;
 	min-height:52px;
+	overflow: hidden;
 }
 
 #navi.hidden > li {
@@ -64,6 +118,7 @@ body {
 #navi > li {
 	display:inline-block;
 	cursor:pointer;
+	height: 27px;
 	margin:0 1px;
 	padding:10px 15px;
 	-webkit-tap-highlight-color: rgba(0,0,0,0);
@@ -79,16 +134,41 @@ body {
 	padding:11px 14px;
 }
 
+@media screen and (max-width:1120px) {
+    #headline {
+        display:none;
+    }
+}
+
+@media screen and (max-width:920px) {
+    #headline {
+        display:initial;
+    }
+	#navi {
+        display:none;
+    }
+	#naviDropdown {
+		display:inline-block;
+	}
+}
+
+@media screen and (max-width:300px) {
+    #headline {
+        display:none;
+    }
+}
+
 #content {
-	padding-top:1.5em;
-	height:80%;
-	height:calc(100% - 100px);
+	height: calc(100% - 75px);
+	width: 100%;
 	overflow:auto;
 	white-space:nowrap;
+	padding-top: 1.5em;
 }
 
 .tabcontent {
 	height:100%;
+	width: 100%;
 	display:none;
 	text-align:center;
 }
@@ -99,7 +179,9 @@ body {
 	position: relative;
 	text-align:center;
 	width: 94%;
+	max-width: calc(100% - 85px);
 	overflow-x: scroll;
+	padding-left: 5px;
 }
 
 .tabcontent_right {
@@ -108,8 +190,10 @@ body {
 	position: relative;
 	text-align:center;
 	width:5.3%;
+	min-width: 70px;
 	overflow-x: scroll;
-	padding-left: 0.7%;
+	box-shadow: -10px 0px 10px #13222d;
+	padding-left: 5px;
 }
 
 .tabcontent-dynamic {
@@ -120,9 +204,10 @@ body {
 
 .control {
 	width:5.6%;
+	min-width: 70px;
 	max-width:100px;
 	height:100%;
-	margin-right:0.7%;
+	margin-right: 5px;
 	display:inline-block;
 	text-align:center;
 	position:relative;
@@ -162,14 +247,13 @@ body {
 	width:75%;
 	margin:.5em auto;
 	position:relative;
-	height:300px;
 	min-height:150px;
 	height:calc(100% - 210px);
 }
 
 .fader-ticks {
-	height:85%;
-	top:7.5%;
+	height: calc(100% - 47px);
+	top: 23.5px;
 	position:relative;
 	background-color: gray;
 	background-image: linear-gradient(transparent 50%, rgba(255,255,255,.5) 50%);
@@ -209,7 +293,7 @@ body {
 
 .fader-handle {
 	width: calc(100% - 2px);
-	height:15%;
+	height: 45px;
 	position:absolute;
 	top:0;
 	left:0;
@@ -277,11 +361,11 @@ body {
 	position:absolute;
 	left:0;
 	right:0;
-	top:100px;
+	top:55px;
 	bottom:0;
 	min-height:200px;
 	background-color:#116284;
-	border-top:50px solid #13222d;
+	border-top:150px solid #13222d;
 	border-bottom:150px solid #13222d;
 	overflow:auto;
 	z-index:1000;
