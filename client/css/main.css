@@ -1,7 +1,7 @@
 ﻿body, html {
 	height:100%;
 	width:100%;
-	min-width: 230px;
+	min-width: 260px;
 	min-height: 400px;
 	padding:0;
 	margin:0;
@@ -178,10 +178,10 @@ body {
 	float: left;
 	position: relative;
 	text-align:center;
-	width: 94%;
-	max-width: calc(100% - 85px);
+	width: calc(94% - 45px);
+	max-width: calc(100% - 110px);
 	overflow-x: scroll;
-	padding-left: 5px;
+	padding-left: 15px;
 }
 
 .tabcontent_right {
@@ -189,11 +189,11 @@ body {
 	float: left;
 	position: relative;
 	text-align:center;
-	width:5.3%;
+	width: calc(5.3%);
 	min-width: 70px;
 	overflow-x: scroll;
 	box-shadow: -10px 0px 10px #13222d;
-	padding-left: 5px;
+	padding-right: 10px;
 }
 
 .tabcontent-dynamic {
@@ -255,9 +255,6 @@ body {
 	height: calc(100% - 47px);
 	top: 23.5px;
 	position:relative;
-	background-color: gray;
-	background-image: linear-gradient(transparent 50%, rgba(255,255,255,.5) 50%);
-	background-size: 20% 20%;
 }
 
 .fader-bar {
@@ -268,16 +265,28 @@ body {
 	position:relative;
 }
 
-.fader-background {
+.fader-background-max0 {
 	position:absolute;
-	top:2px;
+	top: 0;
 	left:2px;
 	right:2px;
-	bottom:2px;
-	background-image:url(../img/fader-level.svg);
+	bottom: 0;
+	background-image:url(../img/fader-level-max0-big.svg);
 	background-size:auto 100%;
 	background-repeat:repeat-x;
 }
+
+.fader-background-max10 {
+	position:absolute;
+	top: 0;
+	left:2px;
+	right:2px;
+	bottom: 0;
+	background-image:url(../img/fader-level-max10-big.svg);
+	background-size:auto 100%;
+	background-repeat:repeat-x;
+}
+
 
 .fader-level {
 	position:absolute;
@@ -288,8 +297,6 @@ body {
 	background-color:#13222d;
     transition:all 0.2s;
 }
-
-
 
 .fader-handle {
 	width: calc(100% - 2px);
@@ -319,12 +326,72 @@ body {
 	font-weight:bold;
 }
 
+.fader-db-right {
+	border-bottom: 1px solid #fff;
+	width: 18px;
+	height: 11px;
+	left: 100%;
+	position: absolute;
+	color:#a0a6ab;
+}
+
+.fader-db-left {
+	border-bottom: 1px solid #fff;
+	width: 18px;
+	height: 11px;
+	right: 100%;
+	position: absolute;
+	color:#a0a6ab;
+}
+
+.fader-db-label-right {
+	height: 11px;
+	font-size:60%;
+	border-bottom: 1px solid #fff;
+	width: 18px;
+	left: 100%;
+	position: absolute;
+}
+
+.fader-db-label-left {
+	height: 11px;
+	font-size:60%;
+	border-bottom: 1px solid #fff;
+	width: 18px;
+	right: 100%;
+	position: absolute;
+}
+
 .fader-label {
 	font-size:60%;
 	margin-bottom:1em;
 	margin-top:1em;
     text-overflow: ellipsis;
     overflow: hidden;
+}
+
+@media screen and (max-height:650px) {
+    .fader-db-big {
+        display:none;
+    }
+	.fader-background-max0 {
+		background-image:url(../img/fader-level-max0-medium.svg);
+	}
+	.fader-background-max10 {
+		background-image:url(../img/fader-level-max10-medium.svg);
+	}
+}
+
+@media screen and (max-height:530px) {
+    .fader-db-medium {
+        display:none;
+    }
+	.fader-background-max0 {
+		background-image:url(../img/fader-level-max0-small.svg);
+	}
+	.fader-background-max10 {
+		background-image:url(../img/fader-level-max10-small.svg);
+	}
 }
 
 .fader-select {
