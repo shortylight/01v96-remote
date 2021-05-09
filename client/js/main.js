@@ -666,10 +666,12 @@ var remoteApp = {
 					app.status.faderPan[id] = app.config.maxFaderValue;
 					app.status.faderName[id] = app.config.emptyName;
 					
-					if(target != 'auxsend') {
+					if(target != 'auxsend' && target != 'sum') {
 						app.status.on[id] = true;
 						app.status.level[id] = 0;
 					}
+					app.status.level['sum1'] = 0;
+					app.status.level['sum2'] = 0;
 				}
 				
 				// generate HTML
@@ -686,7 +688,12 @@ var remoteApp = {
 						<div class="fader-ticks">\
 						<div class="fader-bar">\
 							<div class="fader-background"></div>\
+							' + (target == 'sum' ?  '\
+							<div class="fader-level-left" style="height:100%"></div>\
+							<div class="fader-level-right" style="height:100%"></div>\
+							' : '\
 							<div class="fader-level" style="height:100%"></div>\
+							' ) + '\
 						</div>\
 						</div>\
 						\
@@ -1192,7 +1199,7 @@ var remoteApp = {
 			$navi = $('#navi'),
 			$tab = $this || $navi.find('li[data-tab="' + id + '"]'),
 			id = $tab.data('tab');
-console.log(num);		
+
 		app.updateTabControls(id);
 		
 		$('.tabcontent[data-tab="' + app.status.activeTab + '"]').hide();
@@ -1221,9 +1228,8 @@ console.log(num);
 		// update all levels with one message
 		if(message.type === 'level') {
 			for(i in message.levels) {
-				app.status.level['channel'+i] = message.levels[i];
+				app.status.level[(message.target + i)] = message.levels[i];
 			}
-			
 			app.updateTabControls(false, {level: true});
 		}
         // complete sync
@@ -1411,15 +1417,26 @@ console.log(num);
 
 		// update displayed meter level
 		if(update.level) {
-			
 			// show channel level on aux sends
 			if(target == 'auxsend') {
 				id = 'channel' + num;
 			}
-			levelPercent = (
-				1 - Math.pow(app.status.level[id], 2) / Math.pow(app.config.maxLevelValue,2)
-			) * 100;
-			$control.find('.fader-level').css('height', levelPercent + '%');
+			if(target == 'sum') {
+					id = "sum0";
+					levelPercent = (
+						1 - Math.pow(app.status.level['sum1'], 2) / Math.pow(app.config.maxLevelValue,2)
+					) * 100;
+					$control.find('.fader-level-left').css('height', levelPercent + '%');
+					levelPercent = (
+						1 - Math.pow(app.status.level['sum2'], 2) / Math.pow(app.config.maxLevelValue,2)
+					) * 100;
+					$control.find('.fader-level-right').css('height', levelPercent + '%');
+			} else {
+				levelPercent = (
+					1 - Math.pow(app.status.level[id], 2) / Math.pow(app.config.maxLevelValue,2)
+				) * 100;
+				$control.find('.fader-level').css('height', levelPercent + '%');
+			}
 		}	
 	},
 

@@ -151,6 +151,7 @@ var config = {
     // request meter levels
     // sent every 50msec
     // request has to be sent every 10sec
+    // i is iterator for channel, aux, bus, sum
     remoteMeterRequest: [
         0xF0,
         0x43,
@@ -158,7 +159,7 @@ var config = {
         0x3E,
         0x0D,
         0x21,		// Remote Meter
-        0x00,		// Address UL - faderpair to 0x22 / 34
+        i,		    // Address UL - faderpair to 0x22 / 34
         0x00,		// Address LU - up to 5
         0x00,		// Address LL - up to 0x27 / 39
         0,			// Count H
@@ -471,16 +472,17 @@ var deviceMessageHandler = function (message) {
         }
         // remote meter - levels
         else if (message[5] == 33) {
-
             // echo messages from meter requests are accidentally
             // recognized as meter messages
             // alternatively more analysis of message header needed
-            if (message.length < 71) {
+            if (message.length < 13) {
                 return;
             }
 
             // do not forward every meter level message
-            meterFilterCount++;
+            if(message[6] == 0) {
+                meterFilterCount++;
+           }
 
             if (meterFilterCount === config.remoteMeterInterval) {
                 meterFilterCount = 0;
@@ -492,16 +494,16 @@ var deviceMessageHandler = function (message) {
 
             outMessage = {
                 type: "level",
+                target: (message[6] == 0 ? "channel" : (message[6] == 1 ? "bus" : (message[6] == 2 ? "aux" : "sum"))), 
                 levels: {}
             };
 
-            for (i = 0; i <= 31; i++) {
+            for (i = 0; message[9 + 2 * i] != 247; i++) {
                 outMessage.levels[i + 1] = message[(9 + 2 * i)];
             }
         }
         // fader names
         else if (message[6] == 04) {
-            //console.log('[mixer-MK] All MIDI message: [' + message + ']' + String.fromCharCode(message[12]));
             faderNameCache += String.fromCharCode(message[12]) || ' ';
             if (message[7] - 4 == 15) {
                 outMessage = {
@@ -1151,7 +1153,10 @@ var setBusOn = function (bus, on) {
  */
 
 var sendRemoteMeterRequest = function () {
-    device.send(config.remoteMeterRequest);
+    // iterate through channel, aux, bus, sum
+    for(i = 0; i < 4; i++) {
+        device.send(config.remoteMeterRequest);
+    }
 };
 
 var sendFaderNameRequest = function () {
