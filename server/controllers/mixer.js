@@ -151,7 +151,6 @@ var config = {
     // request meter levels
     // sent every 50msec
     // request has to be sent every 10sec
-    // i is iterator for channel, aux, bus, sum
     remoteMeterRequest: [
         0xF0,
         0x43,
@@ -159,7 +158,7 @@ var config = {
         0x3E,
         0x0D,
         0x21,		// Remote Meter
-        i,		    // Address UL - faderpair to 0x22 / 34
+        0x00,	    // Address UL - faderpair to 0x22 / 34
         0x00,		// Address LU - up to 5
         0x00,		// Address LL - up to 0x27 / 39
         0,			// Count H
@@ -1155,8 +1154,10 @@ var setBusOn = function (bus, on) {
 var sendRemoteMeterRequest = function () {
     // iterate through channel, aux, bus, sum
     for(i = 0; i < 4; i++) {
+        config.remoteMeterRequest[6] = i;
         device.send(config.remoteMeterRequest);
     }
+    config.remoteMeterRequest[6] = 0;
 };
 
 var sendFaderNameRequest = function () {
