@@ -134,6 +134,42 @@ body {
 	padding:11px 14px;
 }
 
+/* vertical navigation */
+
+#vnavi {
+	list-style-type:none;
+	margin: 0;
+	padding: 5px;
+	min-width:7em;
+	overflow: hidden;
+}
+
+#vnavi.hidden > li {
+	display:none;
+}
+
+#vnavi > li {
+	display:block;
+	cursor:pointer;
+	height: 27px;
+	width: 6em;
+	margin:10px;
+	padding:10px;
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+#vnavi > li.active {
+	border:1px solid #fff;
+	border-right:none;
+	background:#13222d;
+	position:relative;
+	top:1px;
+	line-height:29px;
+	padding:11px;
+}
+
+/* media limits */
+
 @media screen and (max-width:1120px) {
     #headline {
         display:none;
@@ -414,6 +450,59 @@ body {
 	font-size:500%;
 	cursor:pointer;
 	margin-top:0;
+}
+
+/* effect section */
+.grid-4 {
+	display: grid;
+	height: 100%;
+    padding:10px;
+    padding-top:0;
+    -moz-box-sizing:border-box;
+    -webkit-box-sizing:border-box;
+    box-sizing:border-box;
+    vertical-align:top;
+	grid-template-columns: 0.4fr repeat(2, 1fr) repeat(2, 0.4fr);
+	grid-template-rows: 0.4fr repeat(3, 1fr) 0.4fr; 
+	grid-column-gap: 0px;
+	grid-row-gap: 0px;
+	justify-items: stretch;
+    align-items: stretch;
+}
+
+.effectTab1 { 
+	grid-area: 1 / 1 / 6 / 2; 
+	background-color: blueviolet;
+	border-right: 1px solid white;
+}
+
+.effectContent2 { 
+	grid-area: 1 / 2 / 5 / 4; 
+	background-color: purple;
+	border-right: 1px solid white;
+	border-bottom: 1px solid white;
+}
+
+.effectControl3 { 
+	grid-area: 5 / 2 / 6 / 4; 
+	background-color: rgb(61, 0, 0);
+}
+
+.effectControlHead4 { 
+	grid-area: 1 / 4 / 2 / 6; 
+	background-color: rgba(0, 0, 255, 0.397);
+}
+
+.effectControl5 { 
+	grid-area: 2 / 4 / 6 / 5; 
+	background-color: rgb(61, 0, 0);
+	border-right: 1px solid white;
+	border-top: 1px solid white;
+}
+
+.effectChannel6 { 
+	grid-area: 2 / 5 / 6 / 6; 
+	background-color: rgba(0, 0, 255, 0.397);
 }
 
 /* configuration */

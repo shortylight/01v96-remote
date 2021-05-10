@@ -195,16 +195,20 @@ var config = {
 var status = {
 
     on: {
-        sum0: false
+        sum0: false,
+        solo1: false
     },
     fader: {
-        sum0: 0
+        sum0: 0,
+        solo1: 0
     },
     faderPan: {
-        sum0: 'CENTER'
+        sum0: 'CENTER',
+        solo1: 'CENTER'
     },
     faderName: {
-        sum0: 'STEREO'
+        sum0: 'STEREO',
+        solo1: 'SOLO'
     },
     faderGate: {
         On: {

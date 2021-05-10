@@ -486,6 +486,9 @@ var remoteApp = {
 		
 		// currently moved faders [id: true]; disabled automatic repositioning on value change
 		movedFaders: {},
+
+		// selected fader (for effects)
+		selectedFader: 0,
 		
 		// initial waiting for document.ready and socket initialization
 		pendingOperations: 2,
@@ -753,6 +756,15 @@ var remoteApp = {
                 firstTab = false;
             }
 		}
+
+		// generate effects content
+		
+		naviHtml += generateTab('effects_content', 'EFFECTS', 'Effects', activeTabSelected ? (app.status.activeTab === tabid) : firstTab);
+		'<ul id="navi" class="hidden">\
+			<li data-tab="effects_content" title="Effects">EFFECTS</li>\
+			</ul>';
+
+		effectChanHTML = generateControl('effects_content','solo',1,'SOLO');
 		
 		// generate configuration inputs
 		
@@ -771,6 +783,7 @@ var remoteApp = {
 		$('#navi').prepend(naviHtml).removeClass('hidden');
 		$('#naviDropdownContent').prepend(naviHtml).removeClass('hidden');
 		$('#content').append(contentHtml);
+		$("#effect_channel").html(effectChanHTML);
         $('#configuration_channels').html(configChannelHtml);
         $('#configuration_master').html(configMasterHtml);
 		
@@ -846,7 +859,7 @@ var remoteApp = {
 		// select-buttons
 		$content.on('click', '.fader-select', function() {
 			var $this = $(this);
-			app.switchTab('configuration', null, $this.attr('id'));
+			app.switchTab('effects_content', null, $this.attr('id'));
 		});
 		
 		// tab navigation
@@ -1000,6 +1013,12 @@ var remoteApp = {
             if(!app.status.movedFaders[id]) {
                 return;
             }
+			
+			if(target == 'solo' && app.status.selectedFader){
+				target = 'channel';
+				id = 'channel' + app.status.selectedFader;
+				num = app.status.selectedFader;
+			}
 
 			// compute and apply position
 			var newPositionPx = $control.data('originalPosition')+position - $control.data('touchPosition'),
@@ -1097,7 +1116,8 @@ var remoteApp = {
                 i, j, groupId;
 			
 			// override aux sends: toggle channel on-status
-			if(target == 'auxsend') {
+			if(target == 'auxsend' || 'solo') {
+				num = (target == 'solo' ? app.status.selectedFader : num);
 				id = 'channel' + num;
 				target = 'channel';
 				newValue = !app.status.on[id];
@@ -1157,7 +1177,8 @@ var remoteApp = {
 			app.sendControlMessage(
 				'on',
 				target,
-				$control.data('number'),
+				num,
+				//$control.data('number'),
 				newValue
 			);
 		}
@@ -1192,8 +1213,14 @@ var remoteApp = {
 			$navi = $('#navi'),
 			$tab = $this || $navi.find('li[data-tab="' + id + '"]'),
 			id = $tab.data('tab');
-console.log(num);		
-		app.updateTabControls(id);
+
+		if(num) {
+			app.status.selectedFader = num;
+			app.updateEffectsData(num);
+		} else {
+			app.updateTabControls(id);
+		}		
+		
 		
 		$('.tabcontent[data-tab="' + app.status.activeTab + '"]').hide();
 		$navi.find('[data-tab="' + app.status.activeTab + '"]').removeClass('active');
@@ -1288,6 +1315,12 @@ console.log(num);
 					}
 				}
 			}
+			if (app.status.activeTab == 'effects_content' && message.num == app.status.selectedFader) {
+				app.status[message.type][id] = message.value;
+				updateType = {};
+				updateType[message.type] = true;
+				app.updateControl('solo', message.num, '', updateType);
+			}
 				
 			app.status[message.type][id] = message.value;
 	
@@ -1320,6 +1353,21 @@ console.log(num);
 			app.updateControl($(this).data('target'), $(this).data('number'), $(this).data('number2'), update);
 		});
 	},
+
+	updateEffectsData: function(num) {
+		var app = this;
+
+		app.status.on['solo1'] = app.status.on['channel' + num];
+		app.status.fader['solo1'] = app.status.fader['channel' + num];
+		app.status.faderName['solo1'] = app.status.faderName['channel' + num];
+		app.status.faderPan['solo1'] = app.status.faderPan['channel' + num];
+		app.status.faderPair.Pair['solo1'] = app.status.faderPair.Pair['channel' + num];
+		app.updateControl('solo',1,'',{on:true,fader:true,faderPan:true,faderName:true,faderPair:true});
+		//requestEffectsData(num);
+		/*if(app.status.faderGate) {
+			$('#effect_content').html(JSON.stringify(app.status.faderGate));
+		}*/
+	},
 	
 	/**
 	 * updates a control to display its current values
@@ -1337,7 +1385,14 @@ console.log(num);
 			$onControl = $control,
 			
 			faderPercent, levelPercent;
-		
+
+		if (app.status.activeTab == 'effects_content' && num == app.status.selectedFader) {
+			target = 'channel';
+			id = 'channel' + num;
+			$control = $('.control[data-id="solo1"]');
+			$onControl = $control;
+		}
+
 		if(!update) {
 			update = {
 				on: true,
@@ -1355,8 +1410,10 @@ console.log(num);
 				id = 'channel' + num;
 			}
 			
-			$onControl = $control.add($('.control[data-target="auxsend"][data-number="' + num + '"]'));
-			
+			if (app.status.activeTab != 'effects_content') {
+				$onControl = $control.add($('.control[data-target="auxsend"][data-number="' + num + '"]'));
+			}
+
 			if(app.status.on[id]) {
 				$onControl.removeClass('control-disabled');
 			}
