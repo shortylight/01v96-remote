@@ -470,7 +470,7 @@ body {
     align-items: stretch;
 }
 
-.effectTab1 { 
+.effectNav1 { 
 	grid-area: 1 / 1 / 6 / 2; 
 	background-color: blueviolet;
 	border-right: 1px solid white;
@@ -490,7 +490,7 @@ body {
 
 .effectControlHead4 { 
 	grid-area: 1 / 4 / 2 / 6; 
-	background-color: rgba(0, 0, 255, 0.397);
+	float: left;
 }
 
 .effectControl5 { 
