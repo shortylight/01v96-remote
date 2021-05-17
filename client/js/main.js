@@ -687,13 +687,113 @@ var remoteApp = {
 					<div class="fader">\
 						<div class="fader-ticks">\
 						<div class="fader-bar">\
-							<div class="fader-background"></div>\
-							' + (target == 'sum' ?  '\
+							' + (target == 'channel' || target == 'auxsend' ? '\
+							<div class="fader-background-max10"></div>\
+							<div class="fader-level" style="height:100%"></div>\
+							<div class="fader-db-left" style="bottom:100%">\
+								<div class="fader-db-label-left">+10</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:90.59%">\
+								<div class="fader-db-label-left">+5</div>\
+							</div>\
+							<div class="fader-db-left fader-db-0" style="bottom:81.18%">\
+								<div class="fader-db-label-left fader-db-0">0</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:70.2%">\
+								<div class="fader-db-label-left">-5</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:56.08%">\
+								<div class="fader-db-label-left">-10</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:41.18%">\
+								<div class="fader-db-label-left">-15</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:30.98%">\
+								<div class="fader-db-label-left">-20</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:16.86%">\
+								<div class="fader-db-label-left">-30</div>\
+							</div>\
+							<div class="fader-db-left fader-db-medium" style="bottom:9.02%">\
+								<div class="fader-db-label-left">-40</div>\
+							</div>\
+							<div class="fader-db-left fader-db-big" style="bottom:4.54%">\
+								<div class="fader-db-label-left fader-db-medium">-50</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:0%">\
+								<div class="fader-db-label-left">-&infin;</div>\
+							</div>\ ' : (target == 'sum' ? '\
+							<div class="fader-background-max0"></div>\
 							<div class="fader-level-left" style="height:100%"></div>\
 							<div class="fader-level-right" style="height:100%"></div>\
-							' : '\
+							<div class="fader-db-right" style="bottom:100%">\
+								<div class="fader-db-label-right">0</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:91.37%">\
+								<div class="fader-db-label-right">-5</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:79.61%">\
+								<div class="fader-db-label-right">-10</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:69.41%">\
+								<div class="fader-db-label-right">-15</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:57.65%">\
+								<div class="fader-db-label-right">-20</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:41.18%">\
+								<div class="fader-db-label-right">-30</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:29.41%">\
+								<div class="fader-db-label-right">-40</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:18.43%">\
+								<div class="fader-db-label-right">-50</div>\
+							</div>\
+							<div class="fader-db-right fader-db-big" style="bottom:11.37%">\
+								<div class="fader-db-label-right">-60</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:8.24%">\
+								<div class="fader-db-label-right">-70</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:0%">\
+								<div class="fader-db-label-right">-&infin;</div>\
+							</div>\ ': '\
+							<div class="fader-background-max0"></div>\
 							<div class="fader-level" style="height:100%"></div>\
-							' ) + '\
+							<div class="fader-db-left" style="bottom:100%">\
+								<div class="fader-db-label-left">0</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:91.37%">\
+								<div class="fader-db-label-left">-5</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:79.61%">\
+								<div class="fader-db-label-left">-10</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:69.41%">\
+								<div class="fader-db-label-left">-15</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:57.65%">\
+								<div class="fader-db-label-left">-20</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:41.18%">\
+								<div class="fader-db-label-left">-30</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:29.41%">\
+								<div class="fader-db-label-left">-40</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:18.43%">\
+								<div class="fader-db-label-left">-50</div>\
+							</div>\
+							<div class="fader-db-left fader-db-big" style="bottom:11.37%">\
+								<div class="fader-db-label-left">-60</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:8.24%">\
+								<div class="fader-db-label-left">-70</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:0%">\
+								<div class="fader-db-label-left">-&infin;</div>\
+							</div>\ ')) + '\
 						</div>\
 						</div>\
 						\
@@ -1407,10 +1507,18 @@ var remoteApp = {
 				id = 'channel' + num;
 			}
 			if (app.status.faderPair.Pair[id] == 1) {
-				colorVar = 40 * (Math.floor((id.slice(7) - 1) / 2) % 2) + 50;
-				$control.find('.pair').css('background-color', '#ff' + colorVar + '00');
-			} else {
-				$control.find('.pair').css('background-color', 'transparent');
+				if(Math.floor((id.slice(7) - 1) / 2) % 2){
+					$control.find('.pair').addClass('pair-a');
+				}else{
+					$control.find('.pair').addClass('pair-b');
+				}
+				
+			} else {	
+				if(Math.floor((id.slice(7) - 1) / 2) % 2){
+					$control.find('.pair').removeClass('pair-a');
+				}else{
+					$control.find('.pair').removeClass('pair-b');
+				}			
 			}
 			id = oldId;
 		}
