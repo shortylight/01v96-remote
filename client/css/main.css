@@ -1,8 +1,8 @@
 ﻿body, html {
 	height:100%;
 	width:100%;
-	min-width: 230px;
-	min-height: 400px;
+	min-width: 250px;
+	min-height: 450px;
 	padding:0;
 	margin:0;
 }
@@ -178,10 +178,10 @@ body {
 	float: left;
 	position: relative;
 	text-align:center;
-	width: 94%;
-	max-width: calc(100% - 85px);
+	width: calc(94.7% - 35px);
+	max-width: calc(100% - 105px);
 	overflow-x: scroll;
-	padding-left: 5px;
+	padding-left: 15px;
 }
 
 .tabcontent_right {
@@ -189,10 +189,12 @@ body {
 	float: left;
 	position: relative;
 	text-align:center;
-	width:5.3%;
+	width: calc(5.3%);
+	background-color:#116284;
+	box-shadow: 0px -7.5px 0px #116284;
 	min-width: 70px;
 	overflow-x: scroll;
-	box-shadow: -10px 0px 10px #13222d;
+	padding-right: 15px;
 	padding-left: 5px;
 }
 
@@ -222,7 +224,7 @@ body {
 	width:80%;
 	margin:auto;
 	border:1px solid #fff;
-	background-color:#116284;
+	background-color:#e35818;
 	padding:8px 4px;
 	cursor:pointer;
 }
@@ -233,8 +235,17 @@ body {
 }
 
 .pair {
-    height:1px;
-    margin-top:8px;
+    height:3px;
+    margin-top:6px;
+	background-color: transparent;
+}
+
+.pair-a {
+	background-color:#11846d;
+}
+
+.pair-b{
+	background-color:#116284;
 }
 
 .pan {
@@ -255,9 +266,6 @@ body {
 	height: calc(100% - 47px);
 	top: 23.5px;
 	position:relative;
-	background-color: gray;
-	background-image: linear-gradient(transparent 50%, rgba(255,255,255,.5) 50%);
-	background-size: 20% 20%;
 }
 
 .fader-bar {
@@ -268,16 +276,28 @@ body {
 	position:relative;
 }
 
-.fader-background {
+.fader-background-max0 {
 	position:absolute;
-	top:2px;
+	top: 0;
 	left:2px;
 	right:2px;
-	bottom:2px;
-	background-image:url(../img/fader-level.svg);
+	bottom: 0;
+	background-image:url(../img/fader-level-max0-big.svg);
 	background-size:auto 100%;
 	background-repeat:repeat-x;
 }
+
+.fader-background-max10 {
+	position:absolute;
+	top: 0;
+	left:2px;
+	right:2px;
+	bottom: 0;
+	background-image:url(../img/fader-level-max10-big.svg);
+	background-size:auto 100%;
+	background-repeat:repeat-x;
+}
+
 
 .fader-level {
 	position:absolute;
@@ -289,8 +309,6 @@ body {
     transition:all 0.2s;
 }
 
-
-
 .fader-handle {
 	width: calc(100% - 2px);
 	height: 45px;
@@ -298,7 +316,7 @@ body {
 	top:0;
 	left:0;
 	background-color:rgba(26,26,26,0.55);
-	background: linear-gradient(00deg, rgba(26,26,26,0.55) 0%, rgba(100,100,200,1) 50%, rgba(26,26,26,0.55) 100%);
+	background: linear-gradient(00deg, #11628444 0%, #116284FF 50%, #11628444 100%);
 	border:1px solid #fff;
 	cursor:pointer;
 	
@@ -311,7 +329,7 @@ body {
 
 .fader-handle-sum {
 	background-color:rgba(121,8,8,0.55);
-	background: linear-gradient(00deg, rgba(26,26,26,0.55) 0%, rgba(200,100,100,1) 50%, rgba(26,26,26,0.55) 100%);
+	background: linear-gradient(00deg, rgba(200,100,100,0.27) 0%, rgba(200,100,100,1) 50%, rgba(200,100,100,0.27) 100%);
 }
 
 .fader-biglabel {
@@ -319,19 +337,99 @@ body {
 	font-weight:bold;
 }
 
+.fader-db-right {
+	border-bottom: 1px solid #fff;
+	width: 93%;
+	min-height: 11px;
+	height: 1.6vh;
+	left: 100%;
+	position: absolute;
+	color:#fff;
+}
+
+.fader-db-left {
+	border-bottom: 1px solid #fff;
+	width: 93%;
+	min-height: 11px;
+	height: 1.6vh;
+	right: 100%;
+	position: absolute;
+	color:#fff;
+}
+
+.fader-db-label-right {
+	min-height: 11px;
+	height: 1.6vh;
+	font-size: 80%;
+	border-bottom: 1px solid #fff;
+	width: 18px;
+	left: 100%;
+	position: absolute;
+}
+
+.fader-db-label-left {
+	min-height: 11px;
+	height: 1.6vh;
+	font-size:80%;
+	border-bottom: 1px solid #fff;
+	width: 18px;
+	right: 100%;
+	position: absolute;
+}
+
+.fader-db-0 {
+	border-bottom: 2px solid #fff;
+}
+
 .fader-label {
-	font-size:60%;
+	font-size:80%;
 	margin-bottom:1em;
 	margin-top:1em;
     text-overflow: ellipsis;
     overflow: hidden;
 }
 
+@media screen and (max-height:950px) {
+	.fader-db-label-left {
+		font-size: 60%;
+	}
+	.fader-db-label-right {
+		font-size: 60%;
+	}
+	.fader-label {
+		font-size: 60%;
+	}
+}
+
+@media screen and (max-height:650px) {
+    .fader-db-big {
+        display:none;
+    }
+	.fader-background-max0 {
+		background-image:url(../img/fader-level-max0-medium.svg);
+	}
+	.fader-background-max10 {
+		background-image:url(../img/fader-level-max10-medium.svg);
+	}
+}
+
+@media screen and (max-height:530px) {
+    .fader-db-medium {
+        display:none;
+    }
+	.fader-background-max0 {
+		background-image:url(../img/fader-level-max0-small.svg);
+	}
+	.fader-background-max10 {
+		background-image:url(../img/fader-level-max10-small.svg);
+	}
+}
+
 .fader-select {
 	width:80%;
 	margin:auto;
 	border:1px solid #fff;
-	background-color:#843211;
+	background-color:#11846d;
 	padding:8px 4px;
 	cursor:pointer;
 }
