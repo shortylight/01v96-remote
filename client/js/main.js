@@ -694,8 +694,8 @@ var remoteApp = {
 							<div class="fader-db-left" style="bottom:90.59%">\
 								<div class="fader-db-label-left">+5</div>\
 							</div>\
-							<div class="fader-db-left" style="bottom:81.18%">\
-								<div class="fader-db-label-left">0</div>\
+							<div class="fader-db-left fader-db-0" style="bottom:81.18%">\
+								<div class="fader-db-label-left fader-db-0">0</div>\
 							</div>\
 							<div class="fader-db-left" style="bottom:70.2%">\
 								<div class="fader-db-label-left">-5</div>\
