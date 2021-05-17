@@ -725,8 +725,8 @@ var remoteApp = {
 				}
 				
 				// generate HTML
-				return '<div class="control"' + (target == 'sum' ? ' style="width: 100%;"' : '') + ' " data-id="' + id + '" data-target="' + target + '" data-number="' + num + '" data-number2="' + (num2 || '') + '">\
-					<div class="on-button">\
+				return '<div class="control" " data-id="' + id + '" data-target="' + target + '" data-number="' + num + '" data-number2="' + (num2 || '') + '">\
+					<div class="on-button" ' + (target == 'control' ? ' style="display: none;"' : '') + '>\
 						ON\
 					</div>\
 					<div class="group"></div>\
@@ -838,11 +838,12 @@ var remoteApp = {
 		effectContentHTML += generateEffectContent('delay','Delay',false);
 		
 		effectChanHTML = generateEffectControl('effects','solo',1,'SOLO');
+		effectControl1HTML = generateEffectControl('effects','control',1,'CONTROL');
 
 		effectHeadHTML = '<div class="fader-select" id="1" style="width:20% ; float: left"> &lt;  &lt; </div>\
 		<div class="fader-select" id="2" style="width:20% ; float: right"> &gt; &gt; </div>\
 		<div class="fader-label">&nbsp;</div>\
-		<div class="fader-biglabel" style="position: absolute; bottom: 10px; width: 100%">Channel</div>';
+		<div class="fader-biglabel" style="position: absolute; bottom: 10px; width: calc(100% - 20px)">Channel</div>';
 		
 		// generate configuration inputs
 		
@@ -864,6 +865,7 @@ var remoteApp = {
 		$('#vnavi').append(effectNavHTML);
 		$('#effect_head').html(effectHeadHTML);
 		$('#effect_channel').html(effectChanHTML);
+		$('#effect_control1').html(effectControl1HTML);
 		$('#effect_content').html(effectContentHTML);
         $('#configuration_channels').html(configChannelHtml);
         $('#configuration_master').html(configMasterHtml);
