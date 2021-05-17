@@ -1152,11 +1152,15 @@ var setBusOn = function (bus, on) {
  */
 
 var sendRemoteMeterRequest = function () {
-    // iterate through channel, aux, bus, sum
-    for(i = 0; i < 4; i++) {
+    // iterate through channel, aux, bus
+    for(i = 0; i < 3; i++) {
         config.remoteMeterRequest[6] = i;
         device.send(config.remoteMeterRequest);
     }
+    // select sum
+    config.remoteMeterRequest[6] = 4;
+    device.send(config.remoteMeterRequest);
+    // reset for iteration
     config.remoteMeterRequest[6] = 0;
 };
 
