@@ -224,7 +224,7 @@ body {
 	width:80%;
 	margin:auto;
 	border:1px solid #fff;
-	background-color:#116284;
+	background-color:#e35818;
 	padding:8px 4px;
 	cursor:pointer;
 }
@@ -235,8 +235,17 @@ body {
 }
 
 .pair {
-    height:1px;
-    margin-top:8px;
+    height:3px;
+    margin-top:6px;
+	background-color: transparent;
+}
+
+.pair-a {
+	background-color:#11846d;
+}
+
+.pair-b{
+	background-color:#116284;
 }
 
 .pan {
@@ -307,7 +316,7 @@ body {
 	top:0;
 	left:0;
 	background-color:rgba(26,26,26,0.55);
-	background: linear-gradient(00deg, rgba(26,26,26,0.55) 0%, rgba(100,100,200,1) 50%, rgba(26,26,26,0.55) 100%);
+	background: linear-gradient(00deg, #11628444 0%, #116284FF 50%, #11628444 100%);
 	border:1px solid #fff;
 	cursor:pointer;
 	
@@ -320,7 +329,7 @@ body {
 
 .fader-handle-sum {
 	background-color:rgba(121,8,8,0.55);
-	background: linear-gradient(00deg, rgba(26,26,26,0.55) 0%, rgba(200,100,100,1) 50%, rgba(26,26,26,0.55) 100%);
+	background: linear-gradient(00deg, rgba(200,100,100,0.27) 0%, rgba(200,100,100,1) 50%, rgba(200,100,100,0.27) 100%);
 }
 
 .fader-biglabel {
@@ -330,7 +339,7 @@ body {
 
 .fader-db-right {
 	border-bottom: 1px solid #fff;
-	width: 18px;
+	width: 93%;
 	min-height: 11px;
 	height: 1.6vh;
 	left: 100%;
@@ -340,7 +349,7 @@ body {
 
 .fader-db-left {
 	border-bottom: 1px solid #fff;
-	width: 18px;
+	width: 93%;
 	min-height: 11px;
 	height: 1.6vh;
 	right: 100%;
@@ -420,7 +429,7 @@ body {
 	width:80%;
 	margin:auto;
 	border:1px solid #fff;
-	background-color:#843211;
+	background-color:#11846d;
 	padding:8px 4px;
 	cursor:pointer;
 }

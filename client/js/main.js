@@ -1295,8 +1295,7 @@ var remoteApp = {
 		var app = this,
 			$navi = $('#navi'),
 			$tab = $this || $navi.find('li[data-tab="' + id + '"]'),
-			id = $tab.data('tab');
-console.log(num);		
+			id = $tab.data('tab');		
 		app.updateTabControls(id);
 		
 		$('.tabcontent[data-tab="' + app.status.activeTab + '"]').hide();
@@ -1505,10 +1504,18 @@ console.log(num);
 				id = 'channel' + num;
 			}
 			if (app.status.faderPair.Pair[id] == 1) {
-				colorVar = 40 * (Math.floor((id.slice(7) - 1) / 2) % 2) + 50;
-				$control.find('.pair').css('background-color', '#ff' + colorVar + '00');
-			} else {
-				$control.find('.pair').css('background-color', 'transparent');
+				if(Math.floor((id.slice(7) - 1) / 2) % 2){
+					$control.find('.pair').addClass('pair-a');
+				}else{
+					$control.find('.pair').addClass('pair-b');
+				}
+				
+			} else {	
+				if(Math.floor((id.slice(7) - 1) / 2) % 2){
+					$control.find('.pair').removeClass('pair-a');
+				}else{
+					$control.find('.pair').removeClass('pair-b');
+				}			
 			}
 			id = oldId;
 		}
