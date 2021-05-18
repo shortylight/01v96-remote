@@ -980,7 +980,7 @@ var remoteApp = {
 		// update controls in the currently active tab
 		// to display the right values when the method has been called again
 		app.updateTabControls();
-		//app.updateEffectsData(1);  //Probleme mit Pair !!!
+		//app.updateEffectsData();  //Probleme mit Pair !!!
 		
 		app.bindDynamicEventHandlers();
 
@@ -1051,7 +1051,8 @@ var remoteApp = {
 		// select-buttons
 		$content.on('click', '.fader-select', function() {
 			var $this = $(this);
-			app.switchTab('effects', null, $this.attr('id'));
+			app.status.selectedFader = $this.attr('id');
+			app.switchTab('effects', null);
 		});
 		
 		// tab navigation
@@ -1312,7 +1313,7 @@ var remoteApp = {
 
                 $controls = $('.control:visible'),
 
-                i, j, groupId;
+                i, j, groupId, pairNum = 0;
 			
 			// override aux sends: toggle channel on-status
 			if(target == 'auxsend' || 'solo') {
@@ -1321,7 +1322,7 @@ var remoteApp = {
 				target = 'channel';
 				newValue = !app.status.on[id];
 			}
-			
+
 			app.status.on[id] = newValue;
 			
 			if(newValue) {
@@ -1333,7 +1334,11 @@ var remoteApp = {
 
 			// apply to all buttons of a pair
 			if((target === 'channel' || target === 'auxsend')  && (app.status.faderPair.Pair && app.status.faderPair.Pair[id] == 1)){
-				pairNum = num + ((num % 2) ?  1 : (-1));
+				if (num % 2){
+					pairNum = 1*num +1.0;
+				} else {
+					pairNum = num -1.0;
+				}
 				if(app.status.on['channel' + num] != app.status.on['channel' + pairNum]){
 					app.status.on['channel' + pairNum] = app.status.on['channel' + num]
 				}
@@ -1407,21 +1412,16 @@ var remoteApp = {
 	 * @param {String} id
 	 * @param {jQuery} $this optional jQuery object of the selected tab
 	 */
-	switchTab: function(id, $this, num) {
+	switchTab: function(id, $this) {
 		var app = this,
 			$navi = $('#navi'),
 			$tab = $this || $navi.find('li[data-tab="' + id + '"]'),
 			id = $tab.data('tab');
 
-		if(id == 'effects' && !num){
-			num = app.status.selectedFader;
-		}
-		if(num) {
-			app.status.selectedFader = num;
-			app.updateEffectsData(num);
+		if(id == 'effects'){
+			app.updateEffectsData(app.status.selectedFader);
 		} else {
-			app.status.selectedFader = 0;
-			app.updateTabControls(id);
+			app.updateTabControls(id, {fader: true, faderPan: true, faderName: true, faderPair: true, on: true});
 		}		
 		
 		
@@ -1441,29 +1441,16 @@ var remoteApp = {
 	 * @param {String} id
 	 * @param {jQuery} $this optional jQuery object of the selected tab
 	 */
-		 switchEffectTab: function(id, $this, num) {
+		 switchEffectTab: function(id, $this) {
 			var app = this,
 				$navi = $('#vnavi'),
 				$tab = $this || $navi.find('li[data-vtab="' + id + '"]'),
-				id = $tab.data('vtab');
-console.log('id: ' + id)	
-			/*if(id == 'effects' && !num){
-				num = 1;
-			}
-			if(num) {
-				app.status.selectedFader = num;
-				app.updateEffectsData(num);
-			} else {
-				app.status.selectedFader = 0;
-				app.updateTabControls(id);
-			}		
-			*/
+				id = $tab.data('vtab');	
 			
 			$('.effect_content[data-vtab="' + app.status.activeEffectTab + '"]').hide();
 			$navi.find('[data-vtab="' + app.status.activeEffectTab + '"]').removeClass('active');
 			
 			$('.effect_content[data-vtab="' + id + '"]').show();
-			console.log($('.effect_content[data-vtab="' + id + '"]'));
 			$tab.addClass('active');
 
 			app.status.activeEffectTab = id;
@@ -1486,7 +1473,7 @@ console.log('id: ' + id)
 			for(i in message.levels) {
 				app.status.level[(message.target + i)] = message.levels[i];
 			}
-			if (app.status.selectedFader != 0){
+			if (app.status.activeTab == 'effects'){
 				app.status.level['solo1'] = app.status.level['channel'+app.status.selectedFader]
 				app.updateControl('solo',1,'',{level:true})
 			}
@@ -1570,8 +1557,6 @@ console.log('id: ' + id)
 				updateType = {};
 				updateType[message.type] = true;
 				app.updateControl(message.target, message.num, message.num2, updateType);
-
-
 			}
 		}
 	},

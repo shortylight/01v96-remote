@@ -966,7 +966,11 @@ var clientMessageHandler = function (message, socket) {
         if (message.target === 'channel' || message.target === 'auxsend') {
             // pairing partner has to be transferred
             if(status.faderPair.Pair && status.faderPair.Pair['channel' + message.num] == 1) {
-                pairNum = message.num + ((message.num % 2) ?  1 : (-1));
+                if (message.num % 2){
+					pairNum = 1*message.num +1.0;
+				} else {
+					pairNum = message.num -1.0;
+				}
                 // pairing of channels inside of a tab
                 app.controllers.socket.broadcastToOthers(socket, {
                     type: message.type,
@@ -977,7 +981,11 @@ var clientMessageHandler = function (message, socket) {
                 });
                 // pairing of channels in paired aux tabs
                 if(message.target === 'auxsend'){
-                    pairAux = ((message.num2 % 2) ?  1 : (-1))
+                    if (message.num % 2){
+                        pairNum = 1*message.num +1.0;
+                    } else {
+                        pairNum = message.num -1.0;
+                    }
                     app.controllers.socket.broadcastToOthers(socket, {
                         type: message.type,
                         target: message.target,
