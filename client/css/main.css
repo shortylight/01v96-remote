@@ -619,9 +619,9 @@ body {
 
 .effectControlHead4 { 
 	grid-area: 1 / 3 / 2 / 5; 
-	background-color: #13223d;
+	background-color: #116284;
 	position: relative;
-	padding: 15px;
+	padding: 10px;
 }
 
 .effectControl5 { 
@@ -630,11 +630,12 @@ body {
 
 .effectChannel6 { 
 	grid-area: 2 / 4 / 6 / 5; 
-	background-color: #13223d;
+	background-color: #116284;
 }
 
 .effect_content {
 	display: none;
+	height: 100%;
 }
 
 .effect_fader {
@@ -702,3 +703,41 @@ button {
 #configuration p {
     margin:.5em 0;
 }
+
+.effect_grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	grid-template-rows: repeat(4, 1fr);
+	grid-column-gap: 10px;
+	grid-row-gap: 10px;
+	height: 100%;
+	width: 100%;
+    padding:10px;
+	padding-left: 20px;
+    -moz-box-sizing:border-box;
+    -webkit-box-sizing:border-box;
+    box-sizing:border-box;
+    vertical-align:top;
+}
+
+.div1 { grid-area: 1 / 1 / 2 / 2;}
+.div2 { grid-area: 1 / 2 / 2 / 3;}
+.div3 { grid-area: 1 / 3 / 2 / 4;}
+.div4 { grid-area: 1 / 4 / 2 / 5;}
+.div5 { grid-area: 2 / 1 / 3 / 2;}
+.div6 { grid-area: 2 / 2 / 3 / 3;}
+.div7 { grid-area: 2 / 3 / 3 / 4;}
+.div8 { grid-area: 2 / 4 / 3 / 5;}
+.div9 { grid-area: 3 / 1 / 4 / 2;}
+.div10 { grid-area: 3 / 2 / 4 / 3;}
+.div11 { grid-area: 3 / 3 / 4 / 4;}
+.div12 { grid-area: 3 / 4 / 4 / 5;}
+.div13 { grid-area: 4 / 1 / 5 / 2;}
+.div14 { grid-area: 4 / 2 / 5 / 3;}
+.div15 { grid-area: 4 / 3 / 5 / 4;}
+.div16 { grid-area: 4 / 4 / 5 / 5;}
+.div17 { grid-area: 4 / 1 / 5 / 2;}
+.div18 { grid-area: 4 / 2 / 5 / 3;}
+.div19 { grid-area: 4 / 3 / 5 / 4;}
+.div20 { grid-area: 4 / 4 / 5 / 5;}
+.effect_button {border: 1px solid white; display: flex; align-items: center; justify-content: space-around; line-height: 2em; background-color: #11846D; cursor:pointer;}

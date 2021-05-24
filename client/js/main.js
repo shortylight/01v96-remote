@@ -429,6 +429,48 @@ var remoteApp = {
 			}
 		},
 
+		 /* arrange properties in grid
+    channelGateProperties: ['On','Link','keyIn','KeyAux',
+                            'KeyCh','Type','Attac','Range',
+                            'Hold','Decay','Threshold',
+                            '','','',''],
+    channelCompProperties: ['LocComp','On','Link','Type',
+                            'Attac','Release','Ratio','Gain',
+                            'Knee','Threshold','','',
+                            '','','',''],
+    channelEQProperties:    ['Mode','LowQ','LowF','LowG',
+                            'HPFOn','LowMidQ','LowMidF','LowMidG',
+                            'HiMidQ','HiMidF','HiMidG','HiQ',
+                            'HiF','HiG','LPFOn','On'],
+    channelDelayProperties: ['On','Mix','FBGain','Time',
+                            '','','','',
+                            '','','','',
+                            '','','',''], */
+
+							effectProperties: {
+								main: [	'Pan','','','',
+										'','','','',
+										'','','','',
+										'','','',''],
+								gate: [ 'Threshold','Range','','KeyIn',
+										'Attac','Decay','','KeyCh',
+										'Hold','','','KeyAUX',
+										'On','Link','Type',''],
+								comp: [ 'Threshold','Ratio','','LocComp',
+										'Attac','Release','','',
+										'Gain','Knee','','',
+										'On','Link','Type',''],
+								eq: [   'LowQ','LowMidQ','HiMidQ','HiQ',
+										'LowF','LowMidF','HiMidF','HiF',
+										'LowG','LowMidG','HiMidG','HiG',
+										'On','Mode','LPFOn','HPFOn'],
+								delay: ['Time','FBGain','Mix','',
+										'','','','',
+										'','','','',
+										'On','','','']
+							},
+							
+
         /**
          * persistent configuration that is stored on the server
          */
@@ -459,17 +501,8 @@ var remoteApp = {
 		// current faderName values
 		faderName: {},
 
-		// current faderGate values for all properties
-		faderGate: {},
-
-		// current faderComp values for all properties
-		faderComp: {},
-
-		// current faderEQ values for all properties
-		faderEQ: {},
-
-		// current faderDelay values for all properties
-		faderDelay: {},
+		// current faderEffect values for all properties of all channels
+		faderEffect: {},
 
 		// current faderPair values for all properties
 		faderPair: {},
@@ -830,7 +863,6 @@ var remoteApp = {
 						app.status.level[id] = 0;
 					}
 				}
-				
 				// generate HTML
 				return '<div class="control" " data-id="' + id + '" data-target="' + target + '" data-number="' + num + '" data-number2="' + (num2 || '') + '">\
 					<div class="on-button" ' + (target == 'control' ? ' style="display: none;"' : '') + '>\
@@ -841,15 +873,84 @@ var remoteApp = {
 					\
 					<div class="pan">&nbsp;</div>\
 					\
-					<div class="fader effect_fader">\
+					<div class="fader">\
 						<div class="fader-ticks">\
 						<div class="fader-bar">\
-							<div class="fader-background"></div>\
+							' + (target == 'solo' ? '\
+							<div class="fader-background-max10"></div>\
 							<div class="fader-level" style="height:100%"></div>\
+							<div class="fader-db-right" style="bottom:100%">\
+								<div class="fader-db-label-right">+10</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:90.59%">\
+								<div class="fader-db-label-right">+5</div>\
+							</div>\
+							<div class="fader-db-right fader-db-0" style="bottom:81.18%">\
+								<div class="fader-db-label-right fader-db-0">0</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:70.2%">\
+								<div class="fader-db-label-right">-5</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:56.08%">\
+								<div class="fader-db-label-right">-10</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:41.18%">\
+								<div class="fader-db-label-right">-15</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:30.98%">\
+								<div class="fader-db-label-right">-20</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:16.86%">\
+								<div class="fader-db-label-right">-30</div>\
+							</div>\
+							<div class="fader-db-right fader-db-medium" style="bottom:9.02%">\
+								<div class="fader-db-label-right">-40</div>\
+							</div>\
+							<div class="fader-db-right fader-db-big" style="bottom:4.54%">\
+								<div class="fader-db-label-right fader-db-medium">-50</div>\
+							</div>\
+							<div class="fader-db-right" style="bottom:0%">\
+								<div class="fader-db-label-right">-&infin;</div>\
+							</div>\ ' : '\
+							<div class="fader-background-max10"></div>\
+							<div class="fader-level" style="height:100%"></div>\
+							<div class="fader-db-left" style="bottom:100%">\
+								<div class="fader-db-label-left">+10</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:90.59%">\
+								<div class="fader-db-label-left">+5</div>\
+							</div>\
+							<div class="fader-db-left fader-db-0" style="bottom:81.18%">\
+								<div class="fader-db-label-left fader-db-0">0</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:70.2%">\
+								<div class="fader-db-label-left">-5</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:56.08%">\
+								<div class="fader-db-label-left">-10</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:41.18%">\
+								<div class="fader-db-label-left">-15</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:30.98%">\
+								<div class="fader-db-label-left">-20</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:16.86%">\
+								<div class="fader-db-label-left">-30</div>\
+							</div>\
+							<div class="fader-db-left fader-db-medium" style="bottom:9.02%">\
+								<div class="fader-db-label-left">-40</div>\
+							</div>\
+							<div class="fader-db-left fader-db-big" style="bottom:4.54%">\
+								<div class="fader-db-label-left fader-db-medium">-50</div>\
+							</div>\
+							<div class="fader-db-left" style="bottom:0%">\
+								<div class="fader-db-label-left">-&infin;</div>\
+							</div>\ ' ) + '\
 						</div>\
 						</div>\
 						\
-						<div class="fader-handle' + (target == 'sum' ? ' fader-handle-sum' : '') + '">100%</div>\
+						<div class="fader-handle' + (target == 'solo' ? ' fader-handle-sum' : '') + '">100%</div>\
 					</div>\
 					\
 					\
@@ -866,16 +967,26 @@ var remoteApp = {
 
 			generateEffectTab = function(id, label, title, active) {
 				if(active) {
-					app.status.activeEffetTab = id;
+					app.status.activeEffectTab = id;
 				}
 				return '<li data-vtab="' + id + '"' + (title ? ' title="' + title + '"' : '') + ' class="autogenerated' + (active ? ' active' : '') + '">' + label + '</li>';
 			},
 
 			generateEffectContent = function(id, label, tabIsActive){
+				var i = 0,
+					outHtml = '';
+
 				if(tabIsActive) {
 					app.status.activeEffectTab = id;
 				}
-				return '<div class="effect_content autogenerated" data-vtab="' + id + '"' + (tabIsActive ? ' style="display:block"' : '') + '>' +  label + '</div>';
+				outHtml = '<div class="effect_content autogenerated" data-vtab="' + id + '"' + (tabIsActive ? ' style="display:block"' : '') + '>\
+				<div class="effect_grid control-disabled" id="effect_grid">';
+				for (i = 0; i < 16; i++){
+					outHtml += '<div class="div' + (parseInt(i)+1) + ' effect_button" data-id="' + app.config.effectProperties[id][i] + '"> </div>'
+				}
+				outHtml += '</div>\
+				</div>';
+				return outHtml;
 			},
 			
 			generateConfigurationInput = function(id, label) {
@@ -892,7 +1003,6 @@ var remoteApp = {
 			tabid, i, tab, fader, tabIsActive,
 			
 			activeTabSelected = !!app.status.activeTab,
-			activeEffectTabSelected = !!app.status.activeEffectTab,
 			firstTab = true;
 		
 		// remove perviously auto-generated elements if method is called multiple times
@@ -980,7 +1090,6 @@ var remoteApp = {
 		// update controls in the currently active tab
 		// to display the right values when the method has been called again
 		app.updateTabControls();
-		//app.updateEffectsData();  //Probleme mit Pair !!!
 		
 		app.bindDynamicEventHandlers();
 
@@ -997,10 +1106,9 @@ var remoteApp = {
 	bindGlobalEventHandlers: function() {
 		var app = this,
 			$content = $('#content'),
-			$navi = $('#navi');
-			$vnavi = $('#vnavi');
+			$navi = $('#navi'),
+			$vnavi = $('#vnavi'),
 			$naviDropdown = $('#naviDropdown');
-
 
         // add mouse fader events only when pointer events are unavailable
 
@@ -1054,6 +1162,12 @@ var remoteApp = {
 			app.status.selectedFader = $this.attr('id');
 			app.switchTab('effects', null);
 		});
+
+		// effect-buttons
+		$content.on('click', '.effect_button', function() {
+			var $this = $(this);
+			app.eventAbstraction.onEffect($this)
+		});
 		
 		// tab navigation
 		$navi.on('click', 'li', function() {
@@ -1079,7 +1193,7 @@ var remoteApp = {
 			}
 		});
 
-		// tab navigation
+		// vertical tab navigation
 		$vnavi.on('click', 'li', function() {
 			var $this = $(this);
 			if($this.data('vtab')) {
@@ -1254,7 +1368,7 @@ var remoteApp = {
 			}
 			if((target === 'channel' || target === 'auxsend') && (app.status.faderPair.Pair && app.status.faderPair.Pair[id] == 1)) {
 
-				pairNum = num + ((num % 2) ?  1 : (-1));
+				pairNum = parseInt(num) + ((parseInt(num) % 2) ?  1 : (-1));
 				$controls.filter('[data-target="' + target + '"][data-number="' + pairNum + '"]').find('.fader-handle').css('top', newPositionPercent + '%');
 				$controls.filter('[data-target="' + target + '"][data-number="' + pairNum + '"]').find('.fader-handle').html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.calcFaderDB(app.status.fader[id], target) + 'dB');
 			}
@@ -1335,9 +1449,9 @@ var remoteApp = {
 			// apply to all buttons of a pair
 			if((target === 'channel' || target === 'auxsend')  && (app.status.faderPair.Pair && app.status.faderPair.Pair[id] == 1)){
 				if (num % 2){
-					pairNum = 1*num +1.0;
+					pairNum = parseInt(num) + 1;
 				} else {
-					pairNum = num -1.0;
+					pairNum = parseInt(num) - 1;
 				}
 				if(app.status.on['channel' + num] != app.status.on['channel' + pairNum]){
 					app.status.on['channel' + pairNum] = app.status.on['channel' + num]
@@ -1385,6 +1499,45 @@ var remoteApp = {
 				//$control.data('number'),
 				newValue
 			);
+		},
+
+		onEffect: function($control) {
+			var app = remoteApp,
+				num = app.status.selectedFader,
+				type = 'faderEffect',
+				property = $control.attr('data-id'),
+				target = app.status.activeEffectTab;
+
+			//console.log('send: target: ' + target + ' property: ' + property + ' num: ' + num + ' type: ' + type)
+			
+			// toggle channel on-status
+			if(property == 'On'){
+				newValue = !app.status.faderEffect[target][property]['channel' + num];
+				if(newValue) {
+					$control.parent().removeClass('control-disabled');
+					newValue = 1;
+				}
+				else {
+					$control.parent().addClass('control-disabled');
+					newValue = 0;
+				}
+			}else {
+				newValue = app.status.faderEffect[target][property]['channel' + num];
+			}
+
+			app.status.faderEffect[target][property]['channel' + num] = newValue;
+
+			app.sendControlMessage(
+				type,
+				target,
+				num,
+				//$control.data('number'),
+				newValue,
+				0,
+				property
+			);
+			
+			app.updateEffectsData(app.status.selectedFader);
 		}
 		
 	},
@@ -1417,13 +1570,12 @@ var remoteApp = {
 			$navi = $('#navi'),
 			$tab = $this || $navi.find('li[data-tab="' + id + '"]'),
 			id = $tab.data('tab');
-
 		if(id == 'effects'){
+			app.sendControlMessage('syncEffect', 'effect', app.status.selectedFader, 0, 0);
 			app.updateEffectsData(app.status.selectedFader);
 		} else {
 			app.updateTabControls(id, {fader: true, faderPan: true, faderName: true, faderPair: true, on: true});
 		}		
-		
 		
 		$('.tabcontent[data-tab="' + app.status.activeTab + '"]').hide();
 		$navi.find('[data-tab="' + app.status.activeTab + '"]').removeClass('active');
@@ -1447,6 +1599,8 @@ var remoteApp = {
 				$tab = $this || $navi.find('li[data-vtab="' + id + '"]'),
 				id = $tab.data('vtab');	
 			
+			app.sendControlMessage('syncEffect', 'effect', app.status.selectedFader, 0, 0);
+				
 			$('.effect_content[data-vtab="' + app.status.activeEffectTab + '"]').hide();
 			$navi.find('[data-vtab="' + app.status.activeEffectTab + '"]').removeClass('active');
 			
@@ -1454,12 +1608,13 @@ var remoteApp = {
 			$tab.addClass('active');
 
 			app.status.activeEffectTab = id;
+			app.updateEffectsData(app.status.selectedFader)
 		},
 	
 	/**
 	 * handles socket messages, updates application status and control displays
 	 * @param {object} message
-	 *		properties: type (on, fader, faderPan, faderName, faderComp, faderDelay, faderEQ, faderGate, faderPair, level), target (channel, sum, aux, bus, auxsend), num, num2, value, prop
+	 *		properties: type (on, fader, faderPan, faderName, faderEffect, faderPair, level), target (channel, sum, aux, bus, auxsend), num, num2, value, prop
 	 */
 	messageHandler: function(message) {
 		var app = this,
@@ -1467,18 +1622,18 @@ var remoteApp = {
 			controlIsVisible = false,
 			
 			controls, i, updateType;
-
+		
 		// update all levels with one message
 		if(message.type === 'level') {
 			for(i in message.levels) {
 				app.status.level[(message.target + i)] = message.levels[i];
 			}
 			if (app.status.activeTab == 'effects'){
-				app.status.level['solo1'] = app.status.level['channel'+app.status.selectedFader]
-				app.updateControl('solo',1,'',{level:true})
+				app.status.level['solo1'] = app.status.level['channel'+app.status.selectedFader];
+				app.updateControl('solo',1,'',{level:true});
 			}
 			else {
-				app.updateTabControls(false, {level: true})
+				app.updateTabControls(false, {level: true});
 			}
 			
 		}
@@ -1487,10 +1642,7 @@ var remoteApp = {
             app.status.fader = message.status.fader;
 			app.status.faderPan = message.status.faderPan;
 			app.status.faderName = message.status.faderName;
-			app.status.faderGate = message.status.faderGate;
-			app.status.faderComp = message.status.faderComp;
-			app.status.faderEQ = message.status.faderEQ;
-			app.status.faderDelay = message.status.faderDelay;
+			app.status.faderEffect = message.status.faderEffect;
 			app.status.faderPair = message.status.faderPair;
             app.status.on = message.status.on;
             app.updateTabControls(false, {fader: true, faderPan: true, faderName: true, faderPair: true, on: true});
@@ -1506,28 +1658,22 @@ var remoteApp = {
         else if(app.status[message.type] && message.type === 'faderName') {
 			app.status[message.type][id] = message.value;
         }
+		//  faderPair message
 		else if(app.status[message.type] && message.type === 'faderPair') {
 			//console.log('app.status['+message.type+']['+message.prop+']['+id+'] ' + app.status[message.type][message.prop][id]);
-			app.status[message.type][message.prop][id] = message.value;
+			app.status[message.type][id] = message.value;
         }
-		else if(app.status[message.type] && message.type === 'faderGate') {
-			//console.log('app.status['+message.type+']['+message.prop+']['+id+'] ' + app.status[message.type][message.prop][id]);
-			app.status[message.type][message.prop][id] = message.value;
+		//  faderEffect (target: gate, eq, comp, delay) message
+		else if(app.status[message.type] && message.type === 'faderEffect') {
+			//console.log(JSON.stringify(message,'',false) + ' id: ' + 'channel' + message.num);
+			app.status.faderEffect[message.target][message.prop]['channel' + message.num] = message.value;
+			if (message.num == app.status.selectedFader) {
+				app.updateEffectsData(message.num);
+			}
         }
-		else if(app.status[message.type] && message.type === 'faderComp') {
-			//console.log('app.status['+message.type+']['+message.prop+']['+id+'] ' + app.status[message.type][message.prop][id]);
-			app.status[message.type][message.prop][id] = message.value;
-        }
-		else if(app.status[message.type] && message.type === 'faderEQ') {
-			//console.log('app.status['+message.type+']['+message.prop+']['+id+'] ' + app.status[message.type][message.prop][id]);
-			app.status[message.type][message.prop][id] = message.value;
-        }
-		else if(app.status[message.type] && message.type === 'faderDelay') {
-			//console.log('app.status['+message.type+']['+message.prop+']['+id+'] ' + app.status[message.type][message.prop][id]);
-			app.status[message.type][message.prop][id] = message.value;
-        }
+		
 		// update fader and on-button per channel
-		if(app.status[message.type] && app.status[message.type][id] !== message.value) {
+		else if(app.status[message.type] && app.status[message.type][id] !== message.value) {
 	
 			// determine if control is currently visible
 			if(app.config.controls[app.status.activeTab]) {
@@ -1597,13 +1743,64 @@ var remoteApp = {
 		$('.tabcontent[data-tab="effects"] .fader-label').html('CH ' + num);
 		$('.tabcontent[data-tab="effects"] .fader-select').first().attr('id',(num > 1 ? (num -1) : 1));
 		$('.tabcontent[data-tab="effects"] .fader-select').first().html('&lt ' + (num > 1 ? (num -1) : '--') + ' &lt;');
-		$('.tabcontent[data-tab="effects"] .fader-select').eq(1).attr('id',(num < this.config.channelCount ? (1 + (1*num)) : this.config.channelCount));
-		$('.tabcontent[data-tab="effects"] .fader-select').eq(1).html('&gt; ' + (num < this.config.channelCount ? (1 + (1*num)) : '--') + ' &gt;');
+		$('.tabcontent[data-tab="effects"] .fader-select').eq(1).attr('id',(num < this.config.channelCount ? (1 + parseInt(num)) : this.config.channelCount));
+		$('.tabcontent[data-tab="effects"] .fader-select').eq(1).html('&gt; ' + (num < this.config.channelCount ? (1 + parseInt(num)) : '--') + ' &gt;');
 
-		//requestEffectsData(num);
-		/*if(app.status.faderGate) {
-			$('#effect_content').html(JSON.stringify(app.status.faderGate));
-		}*/
+		//app.sendControlMessage('syncEffect', 'effect', num, 0, 0);
+
+		for (i = 1; i < 21; i++){
+			target = '.div' + i;
+			$(target).html('');
+		}
+
+		if(app.status.faderPan && ('main' == app.status.activeEffectTab)) {
+			$('.div1').html('Pan <br>' + app.status.faderPan[id]);
+		}
+		
+		for(var x in app.config.effectProperties){
+			if(x == app.status.activeEffectTab && (x != 'main')) {
+				for (i=0; i<16; i++){
+					target = '.div' + (parseInt(i) + 1);
+					if(app.config.effectProperties[x][i] != '') {
+						$(target).html(app.config.effectProperties[x][i] + '<br>' + app.status.faderEffect[x][app.config.effectProperties[x][i]][id]);
+						if(app.status.faderEffect[x]['On'][id]) {
+							$(target).parent().removeClass('control-disabled');
+						}
+						else {
+							$(target).parent().addClass('control-disabled');
+						}
+					}
+				}
+			}
+		}
+
+		
+
+		/*
+		i = 1;
+		if(app.status.faderDelay && ('delay' == app.status.activeEffectTab)) {
+			for (x in app.status.faderDelay){
+				target = '.div' + i;
+				$(target).html(x + '<br>' + app.status.faderDelay[x][id]);
+				i++;
+			}
+		}
+
+		if(app.status.faderEQ && ('eq' == app.status.activeEffectTab)) {
+			for (x in app.status.faderEQ){
+				target = '.div' + i;
+				$(target).html(x + '<br>' + app.status.faderEQ[x][id]);
+				i++;
+			}
+		}
+
+		if(app.status.faderComp && ('comp' == app.status.activeEffectTab)) {
+			for (x in app.status.faderComp){
+				target = '.div' + i;
+				$(target).html(x + '<br>' + app.status.faderComp[x][id]);
+				i++;
+			}
+		} */
 
 	},
 	
@@ -1753,7 +1950,7 @@ var remoteApp = {
             color, i, j;
 
         // names
-/* 
+ /*
         $('.fader-label').html('&nbsp;');
         $('#configuration').find('input[type="text"]').val('');
 
@@ -1764,7 +1961,7 @@ var remoteApp = {
                 $config.find('[data-id="' + i + '"]').val(app.config.persistent.names[i]);
             }
         };
-
+*/
         // groups
         $('.control .group').css('background', 'transparent');
 
@@ -1793,7 +1990,6 @@ var remoteApp = {
             }
         }
         $('#configuration_groups').val(groupVal);
-*/
 
         $('#configuration_loading').hide();
     },
@@ -1886,13 +2082,14 @@ var remoteApp = {
 	 * @param {int} value default 0
 	 * @param {int} num2 default 0 [used for aux send]
 	 */
-	sendControlMessage: function(type, target, num, value, num2) {
+	sendControlMessage: function(type, target, num, value, num2, prop) {
 		this.sendMessage({
 			type: type,
 			target: target,
 			num: num || 0,
 			value: value || 0,
-			num2: num2 || 0
+			num2: num2 || 0,
+			prop: prop || 0
 		});
 	},
 	

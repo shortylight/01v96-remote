@@ -106,23 +106,15 @@ var config = {
         auxSendPan: 36,
         busFader: 43,
 
-        channelGate: 30,
-
-        channelComp: 31,
-
-        channelEQ: 32,
-
-        channelDelay: 33,
-
+        channelEffect: {
+            gate: 30,
+            comp: 31,
+            eq: 32,
+            delay: 33
+        }
 
     },
 
-    /* not used anymore
-    channelGateProperties: ['On','Link','keyIn','KeyAux','KeyCh','Type','Attac','Range','Hold','Decay','Threshold'],
-    channelCompProperties: ['LocComp','On','Link','Type','Attac','Release','Ratio','Gain','Knee','Threshold'],
-    channelEQProperties: ['Mode','LowQ','LowF','LowG','HPFOn','LowMidQ','LowMidF','LowMidG','HiMidQ','HiMidF','HiMidG','HiQ','HiF','HiG','LPFOn','On'],
-    channelDelayProperties: ['On','Mix','FBGain','Time'],
-    */
 
     // aux send: 8th byte is used for aux determination
     auxSendParam: function (aux) {
@@ -210,136 +202,138 @@ var status = {
         sum0: 'STEREO',
         solo1: 'SOLO'
     },
-    faderGate: {
-        On: {
-            sum0: false
+    faderEffect: {
+        gate: {
+            On: {
+                sum0: false
+            },
+            Link: {
+                sum0: 0
+            },
+            KeyIn: {
+                sum0: 0
+            },
+            KeyAUX: {
+                sum0: 0
+            },
+            KeyCh: {
+                sum0: 0
+            },
+            Type: {
+                sum0: 0
+            },
+            Attac: {
+                sum0: 0
+            },
+            Range: {
+                sum0: 0
+            },
+            Hold: {
+                sum0: 0
+            },
+            Decay: {
+                sum0: 0
+            },
+            Threshold: {
+                sum0: 0
+            }
         },
-        Link: {
-            sum0: 0
+        comp: {
+            LocComp: {
+                sum0: 0
+            },
+            On: {
+                sum0: false
+            },
+            Link: {
+                sum0: 0
+            },
+            Type: {
+                sum0: 0
+            },
+            Attac: {
+                sum0: 0
+            },
+            Release: {
+                sum0: 0
+            },
+            Ratio: {
+                sum0: 0
+            },
+            Gain: {
+                sum0: 0
+            },
+            Knee: {
+                sum0: 0
+            },
+            Threshold: {
+                sum0: 0
+            }
         },
-        KeyIn: {
-            sum0: 0
+        eq: {
+            Mode: {
+                sum0: 0
+            },
+            LowQ: {
+                sum0: 0
+            },
+            LowF: {
+                sum0: 0
+            },
+            LowG: {
+                sum0: 0
+            },
+            HPFOn: {
+                sum0: false
+            },
+            LowMidQ: {
+                sum0: 0
+            },
+            LowMidF: {
+                sum0: 0
+            },
+            LowMidG: {
+                sum0: 0
+            },
+            HiMidQ: {
+                sum0: 0
+            },
+            HiMidF: {
+                sum0: 0
+            },
+            HiMidG: {
+                sum0: 0
+            },
+            HiQ: {
+                sum0: 0
+            },
+            HiF: {
+                sum0: 0
+            },
+            HiG: {
+                sum0: 0
+            },
+            LPFOn: {
+                sum0: false
+            },
+            On: {
+                sum0: false
+            }
         },
-        KeyAUX: {
-            sum0: 0
+        delay: {
+            On: {
+                sum0: false
+            },
+            Mix: {
+                sum0: 0
+            },
+            FBGain: {
+                sum0: 0
+            },
+            Time: {
+                sum0: 0
+            }
         },
-        KeyCh: {
-            sum0: 0
-        },
-        Type: {
-            sum0: 0
-        },
-        Attac: {
-            sum0: 0
-        },
-        Range: {
-            sum0: 0
-        },
-        Hold: {
-            sum0: 0
-        },
-        Decay: {
-            sum0: 0
-        },
-        Threshold: {
-            sum0: 0
-        }
-    },
-    faderComp: {
-        LocComp: {
-            sum0: 0
-        },
-        On: {
-            sum0: false
-        },
-        Link: {
-            sum0: 0
-        },
-        Type: {
-            sum0: 0
-        },
-        Attac: {
-            sum0: 0
-        },
-        Release: {
-            sum0: 0
-        },
-        Ratio: {
-            sum0: 0
-        },
-        Gain: {
-            sum0: 0
-        },
-        Knee: {
-            sum0: 0
-        },
-        Threshold: {
-            sum0: 0
-        }
-    },
-    faderEQ: {
-        Mode: {
-            sum0: 0
-        },
-        LowQ: {
-            sum0: 0
-        },
-        LowF: {
-            sum0: 0
-        },
-        LowG: {
-            sum0: 0
-        },
-        HPFOn: {
-            sum0: false
-        },
-        LowMidQ: {
-            sum0: 0
-        },
-        LowMidF: {
-            sum0: 0
-        },
-        LowMidG: {
-            sum0: 0
-        },
-        HiMidQ: {
-            sum0: 0
-        },
-        HiMidF: {
-            sum0: 0
-        },
-        HiMidG: {
-            sum0: 0
-        },
-        HiQ: {
-            sum0: 0
-        },
-        HiF: {
-            sum0: 0
-        },
-        HiG: {
-            sum0: 0
-        },
-        LPFOn: {
-            sum0: false
-        },
-        On: {
-            sum0: false
-        }
-    },
-    faderDelay: {
-        On: {
-            sum0: false
-        },
-        Mix: {
-            sum0: 0
-        },
-        FBGain: {
-            sum0: 0
-        },
-        Time: {
-            sum0: 0
-        }
     },
     faderPair: {
         Pair: {
@@ -364,9 +358,12 @@ var fillStatus = function () {
         status.fader['channel' + i] = 0;
         status.faderPan['channel' + i] = 0;
         status.faderName['channel' + i] = 'CH' + i;
-        for (j in status.faderComp) {
-            status.faderComp[j]['channel' + i] = 0;
-        };
+        for (x in status.faderEffect){
+            for (j in status.faderEffect[x]) {
+                status.faderEffect[x][j]['channel' + i] = 0;
+            };
+        }
+        /*
         for (j in status.faderDelay) {
             status.faderDelay[j]['channel' + i] = 0;
         };
@@ -378,7 +375,7 @@ var fillStatus = function () {
         };
         for (j in status.faderPair) {
             status.faderPair[j]['channel' + i] = 0;
-        }
+        }*/
     }
 
 
@@ -522,70 +519,70 @@ var deviceMessageHandler = function (message) {
         // fader or on-button messages and effects
         else {
             switch (message[6]) {
-
-                case config.sysExElements.channelGate:
+                
+                case config.sysExElements.channelEffect['gate']:
                     num = message[8] + 1;
                     value = config.data2Fader(message.slice(9));
 
-                    status.faderGate[Object.keys(status.faderGate)[message[7]]]['channel' + num] = value;
+                    status.faderEffect['gate'][Object.keys(status.faderEffect['gate'])[message[7]]]['channel' + i] = value;
 
                     outMessage = {
-                        type: 'faderGate',
-                        target: "channel",
+                        type: 'faderEffect',
+                        target: 'gate',
                         num: num,
                         value: value,
-                        prop: Object.keys(status.faderGate)[message[7]]
+                        prop: Object.keys(status.faderEffect['gate'])[message[7]]
+                    };
+//console.log('target: ' + message[6] + ' gate: ' + config.sysExElements.channelEffect['gate'] + ' prop: ' + Object.keys(status.faderEffect['gate'])[message[7]])
+                    break;
+
+                case config.sysExElements.channelEffect['comp']:
+                    num = message[8] + 1;
+                    value = config.data2Fader(message.slice(9));
+                    status.faderEffect['comp'][Object.keys(status.faderEffect['comp'])[message[7]]]['channel' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "comp",
+                        num: num,
+                        value: value,
+                        prop: Object.keys(status.faderEffect['comp'])[message[7]]
                     };
 
                     break;
 
-                case config.sysExElements.channelComp:
+                case config.sysExElements.channelEffect['eq']:
                     num = message[8] + 1;
                     value = config.data2Fader(message.slice(9));
-                    status.faderComp[Object.keys(status.faderComp)[message[7]]]['channel' + num] = value;
+
+                    status.faderEffect['eq'][Object.keys(status.faderEffect['eq'])[message[7]]]['channel' + num] = value;
 
                     outMessage = {
-                        type: 'faderComp',
-                        target: "channel",
+                        type: 'faderEffect',
+                        target: "eq",
                         num: num,
                         value: value,
-                        prop: Object.keys(status.faderComp)[message[7]]
+                        prop: Object.keys(status.faderEffect['eq'])[message[7]]
                     };
 
                     break;
 
-                case config.sysExElements.channelEQ:
+                case config.sysExElements.channelEffect['delay']:
                     num = message[8] + 1;
                     value = config.data2Fader(message.slice(9));
 
-                    status.faderEQ[Object.keys(status.faderEQ)[message[7]]]['channel' + num] = value;
+                    status.faderEffect['delay'][Object.keys(status.faderEffect['delay'])[message[7]]]['channel' + num] = value;
 
                     outMessage = {
-                        type: 'faderEQ',
-                        target: "channel",
+                        type: 'faderEffect',
+                        target: "delay",
                         num: num,
                         value: value,
-                        prop: Object.keys(status.faderEQ)[message[7]]
+                        prop: Object.keys(status.faderEffect['delay'])[message[7]]
                     };
 
                     break;
-
-                case config.sysExElements.channelDelay:
-                    num = message[8] + 1;
-                    value = config.data2Fader(message.slice(9));
-
-                    status.faderDelay[Object.keys(status.faderDelay)[message[7]]]['channel' + num] = value;
-
-                    outMessage = {
-                        type: 'faderDelay',
-                        target: "channel",
-                        num: num,
-                        value: value,
-                        prop: Object.keys(status.faderDelay)[message[7]]
-                    };
-
-                    break;
-
+                    
                 case config.sysExElements.channelPair:
                     num = message[8] + 1;
                     value = config.data2Fader(message.slice(9));
@@ -913,40 +910,24 @@ var clientMessageHandler = function (message, socket) {
                     setSumOn(message.value);
                     break;
             }
-
+            console.log('hier On: ' + JSON.stringify(message,'',false))
             break;
 
         // control effect settings
-        case "faderGate":
+        case "faderEffect":
+            //console.log('hier Effect: ' + JSON.stringify(message,'',false))
 
-            setFaderEffect(config.sysExElements.faderGate, Object.keys(status.faderGate).indexOf(message.target), message.num, message.value)
-
-            break;
-
-        case "faderComp":
-
-            setFaderEffect(config.sysExElements.faderComp, Object.keys(status.faderComp).indexOf(message.target), message.num, message.value)
+            setFaderEffect(config.sysExElements.channelEffect[message.target], Object.keys(status.faderEffect[message.target]).indexOf(message.prop), message.num, message.value);
+            status.faderEffect[message.target][message.prop]['channel' + message.num] = message.value;
 
             break;
 
-        case "faderEQ":
+        case "syncEffect":
 
-            setFaderEffect(config.sysExElements.faderEQ, Object.keys(status.faderEQ).indexOf(message.target), message.num, message.value)
-
-            break;
-
-        case "faderDelay":
-
-            setFaderEffect(config.sysExElements.faderDelay, Object.keys(status.faderDelay).indexOf(message.target), message.num, message.value)
+            sendCannelEffectRequest(message.num);
 
             break;
-
-        case "faderPair":
-
-            setFaderEffect(config.sysExElements.faderPair, Object.keys(status.faderPair).indexOf(message.target), message.num, message.value)
-
-            break;
-
+        
         case "sync":
 
             app.controllers.socket.send(socket, {
@@ -967,9 +948,9 @@ var clientMessageHandler = function (message, socket) {
             // pairing partner has to be transferred
             if(status.faderPair.Pair && status.faderPair.Pair['channel' + message.num] == 1) {
                 if (message.num % 2){
-					pairNum = 1*message.num +1.0;
+					pairNum = parseInt(message.num) + 1;
 				} else {
-					pairNum = message.num -1.0;
+					pairNum = parseInt(message.num) - 1;
 				}
                 // pairing of channels inside of a tab
                 app.controllers.socket.broadcastToOthers(socket, {
@@ -982,9 +963,9 @@ var clientMessageHandler = function (message, socket) {
                 // pairing of channels in paired aux tabs
                 if(message.target === 'auxsend'){
                     if (message.num % 2){
-                        pairNum = 1*message.num +1.0;
+                        pairNum = parseInt(message.num) + 1;
                     } else {
-                        pairNum = message.num -1.0;
+                        pairNum = parseInt(message.num) - 1;
                     }
                     app.controllers.socket.broadcastToOthers(socket, {
                         type: message.type,
@@ -1082,7 +1063,7 @@ var setFaderEffect = function (effect, property, channel, parameter) {
 
     device.send(
         config.parameterChange(
-            [effect, property, channel - 1].concat(config.fader2Data(parameter[Object.keys(parameter)[j]]))
+            [effect, property, channel - 1].concat(config.fader2Data(parameter))
         )
 
     )
@@ -1225,34 +1206,14 @@ var sendFaderNameRequest = function () {
 
 var sendCannelEffectRequest = function (channel) {
 
-    // channelGate: request for all parameters of a channel
-    for (j = 0; j < Object.keys(status.faderGate).length; j++) {
-        device.send(
-            config.parameterRequest([config.sysExElements.channelGate, j, channel - 1])
-        )
-    };
-
-    // channelComp: request for all parameters of a channel
-    for (j = 0; j < Object.keys(status.faderComp).length; j++) {
-        device.send(
-            config.parameterRequest([config.sysExElements.channelComp, j, channel - 1])
-        )
-    };
-
-    // channelEQ: request for all parameters of a channel
-    for (j = 0; j < Object.keys(status.faderEQ).length; j++) {
-        device.send(
-            config.parameterRequest([config.sysExElements.channelEQ, j, channel - 1])
-        )
-    };
-
-    // channelDelay: request for all parameters of a channel
-    for (j = 0; j < Object.keys(status.faderDelay).length; j++) {
-        device.send(
-            config.parameterRequest([config.sysExElements.channelDelay, j, channel - 1])
-        )
-    };
-
+    // channelEffect: request for all parameters of a channel
+    for (x in status.faderEffect) {
+        for (j = 0; j < Object.keys(status.faderEffect[x]).length; j++) {
+            device.send(
+                config.parameterRequest([config.sysExElements.channelEffect[x], j, channel - 1])
+            )
+        };
+    }
 };
 
 var sendSyncRequest = function () {
