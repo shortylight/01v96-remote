@@ -6,10 +6,10 @@ var app,
     messageCache = false,
 
     // runtime counter for config.remoteMeterInterval
-    meterFilterCount = 0;
+    meterFilterCount = 0,
 
-// runtime channel name cache
-faderNameCache = '';
+    // runtime channel name cache
+    faderNameCache = '';
 
 
 var init = function () {
@@ -71,8 +71,18 @@ var config = {
     faderThreshold: 1,
 
     // sysEx message beginnings, general and device-specific
-    sysExStart: [240, 67, 48, 62],				//
-    sysExStartSpecific: [240, 67, 16, 62],		//
+    sysExStart: [240,
+                67, 
+                16,     // MIDI channel 0,
+                62,
+                127,
+                01],	//
+
+    sysExStartSpecific: [240, 
+                        67, 
+                        16,         // MIDI channel 0,
+                        62,
+                        13],		//
 
     // sysEx parameter change and parameter request
     parameterChange: function (arr, deviceSpecific) {
@@ -88,6 +98,8 @@ var config = {
         channelPhase: 23,
 
         channelPair: 24,
+        busPair: 39,
+        auxPair: 52,
 
         channelInsert: 25,
 
@@ -97,6 +109,8 @@ var config = {
         busOn: 41,
 
         channelPan: 27,
+        busPan: 42,
+        auxPan: 56,
         sumPan: 78,
 
         channelFader: 28,
@@ -106,23 +120,35 @@ var config = {
         auxSendPan: 36,
         busFader: 43,
 
-        channelGate: 30,
+        channelEffect: {
+            gate: 30,
+            comp: 31,
+            eq: 32,
+            delay: 33
+        },
 
-        channelComp: 31,
+        sumEffect: {
+            comp: 81,
+            eq: 82,
+            delay: 83
+        },
 
-        channelEQ: 32,
+        auxEffect: {
+            comp: 59,
+            eq: 60,
+            delay: 61
+        },
 
-        channelDelay: 33,
+        busEffect: {
+            comp: 45,
+            eq: 46,
+            delay: 47
+        },
 
+        channelRouting: 34
 
     },
 
-    /* not used anymore
-    channelGateProperties: ['On','Link','keyIn','KeyAux','KeyCh','Type','Attac','Range','Hold','Decay','Threshold'],
-    channelCompProperties: ['LocComp','On','Link','Type','Attac','Release','Ratio','Gain','Knee','Threshold'],
-    channelEQProperties: ['Mode','LowQ','LowF','LowG','HPFOn','LowMidQ','LowMidF','LowMidG','HiMidQ','HiMidF','HiMidG','HiQ','HiF','HiG','LPFOn','On'],
-    channelDelayProperties: ['On','Mix','FBGain','Time'],
-    */
 
     // aux send: 8th byte is used for aux determination
     auxSendParam: function (aux) {
@@ -131,12 +157,22 @@ var config = {
 
     // 10bit fader values are transmitted in 4 bytes
     // 00000000 00000000 00000nnn 0nnnnnnn
-    fader2Data: function (value) {
-        return [0, 0, value >> 7, value & 0x7F];
+    value2Data: function (value) {
+        var fill = 0;
+        if (value < 0) {
+            value = 2097152 + value;
+            fill = 127;
+        }
+        return [fill, value >> 14, (value >> 7)& 0x7F, value & 0x7F];
     },
 
-    data2Fader: function (data) {
-        return (data[2] << 7) + data[3];
+    data2Value: function (data) {
+        value = (data[1] << 14) + (data[2] << 7) + data[3];
+        if (data[0] == 127) { // test negative
+            return (2097152 - value) * (-1);
+        } else {
+            return value;
+        }    
     },
 
     // channel on values: last byte 1/0
@@ -145,7 +181,7 @@ var config = {
     },
 
     data2On: function (data) {
-        return !!data[3];
+        return !!data[3]; // type cast to boolean
     },
 
     // request meter levels
@@ -195,152 +231,193 @@ var config = {
 var status = {
 
     on: {
-        sum0: false
+        sum0: false,
+        solo1: false
     },
     fader: {
-        sum0: 0
-    },
-    faderPan: {
-        sum0: 'CENTER'
+        sum0: 0,
+        solo1: 0
     },
     faderName: {
-        sum0: 'STEREO'
+        sum0: 'STEREO',
+        solo1: 'SOLO'
     },
-    faderGate: {
-        On: {
-            sum0: false
+    faderEffect: {
+        main: {
+            Pan: {
+                sum0: 0
+            },
+            Phase: {
+                sum0: 0
+            },
+            Stereo: {
+                sum0: 0
+            },
+            FollowPan: {
+                sum0: 0
+            },
+            Direct: {
+                sum0: 0
+            },
+            Bus1: {
+                sum0: 0
+            },
+            Bus2: {
+                sum0: 0
+            },
+            Bus3: {
+                sum0: 0
+            },
+            Bus4: {
+                sum0: 0
+            },
+            Bus5: {
+                sum0: 0
+            },
+            Bus6: {
+                sum0: 0
+            },
+            Bus7: {
+                sum0: 0
+            },
+            Bus8: {
+                sum0: 0
+            }
         },
-        Link: {
-            sum0: 0
+        gate: {
+            On: {
+                sum0: false
+            },
+            Link: {
+                sum0: 0
+            },
+            KeyIn: {
+                sum0: 0
+            },
+            KeyAUX: {
+                sum0: 0
+            },
+            KeyCh: {
+                sum0: 0
+            },
+            Type: {
+                sum0: 0
+            },
+            Attac: {
+                sum0: 0
+            },
+            Range: {
+                sum0: 0
+            },
+            Hold: {
+                sum0: 0
+            },
+            Decay: {
+                sum0: 0
+            },
+            Threshold: {
+                sum0: 0
+            }
         },
-        KeyIn: {
-            sum0: 0
+        comp: {
+            LocComp: {
+                sum0: 0
+            },
+            On: {
+                sum0: false
+            },
+            Link: {
+                sum0: 0
+            },
+            Type: {
+                sum0: 0
+            },
+            Attac: {
+                sum0: 0
+            },
+            Release: {
+                sum0: 0
+            },
+            Ratio: {
+                sum0: 0
+            },
+            Gain: {
+                sum0: 0
+            },
+            Knee: {
+                sum0: 0
+            },
+            Threshold: {
+                sum0: 0
+            }
         },
-        KeyAUX: {
-            sum0: 0
+        eq: {
+            Mode: {
+                sum0: 0
+            },
+            LowQ: {
+                sum0: 0
+            },
+            LowF: {
+                sum0: 0
+            },
+            LowG: {
+                sum0: 0
+            },
+            HPFOn: {
+                sum0: false
+            },
+            LowMidQ: {
+                sum0: 0
+            },
+            LowMidF: {
+                sum0: 0
+            },
+            LowMidG: {
+                sum0: 0
+            },
+            HiMidQ: {
+                sum0: 0
+            },
+            HiMidF: {
+                sum0: 0
+            },
+            HiMidG: {
+                sum0: 0
+            },
+            HiQ: {
+                sum0: 0
+            },
+            HiF: {
+                sum0: 0
+            },
+            HiG: {
+                sum0: 0
+            },
+            LPFOn: {
+                sum0: false
+            },
+            On: {
+                sum0: false
+            }
         },
-        KeyCh: {
-            sum0: 0
+        delay: {
+            On: {
+                sum0: false
+            },
+            Mix: {
+                sum0: 0
+            },
+            FBGain: {
+                sum0: 0
+            },
+            Time: {
+                sum0: 0
+            }
         },
-        Type: {
-            sum0: 0
-        },
-        Attac: {
-            sum0: 0
-        },
-        Range: {
-            sum0: 0
-        },
-        Hold: {
-            sum0: 0
-        },
-        Decay: {
-            sum0: 0
-        },
-        Threshold: {
-            sum0: 0
-        }
-    },
-    faderComp: {
-        LocComp: {
-            sum0: 0
-        },
-        On: {
-            sum0: false
-        },
-        Link: {
-            sum0: 0
-        },
-        Type: {
-            sum0: 0
-        },
-        Attac: {
-            sum0: 0
-        },
-        Release: {
-            sum0: 0
-        },
-        Ratio: {
-            sum0: 0
-        },
-        Gain: {
-            sum0: 0
-        },
-        Knee: {
-            sum0: 0
-        },
-        Threshold: {
-            sum0: 0
-        }
-    },
-    faderEQ: {
-        Mode: {
-            sum0: 0
-        },
-        LowQ: {
-            sum0: 0
-        },
-        LowF: {
-            sum0: 0
-        },
-        LowG: {
-            sum0: 0
-        },
-        HPFOn: {
-            sum0: false
-        },
-        LowMidQ: {
-            sum0: 0
-        },
-        LowMidF: {
-            sum0: 0
-        },
-        LowMidG: {
-            sum0: 0
-        },
-        HiMidQ: {
-            sum0: 0
-        },
-        HiMidF: {
-            sum0: 0
-        },
-        HiMidG: {
-            sum0: 0
-        },
-        HiQ: {
-            sum0: 0
-        },
-        HiF: {
-            sum0: 0
-        },
-        HiG: {
-            sum0: 0
-        },
-        LPFOn: {
-            sum0: false
-        },
-        On: {
-            sum0: false
-        }
-    },
-    faderDelay: {
-        On: {
-            sum0: false
-        },
-        Mix: {
-            sum0: 0
-        },
-        FBGain: {
-            sum0: 0
-        },
-        Time: {
-            sum0: 0
-        }
     },
     faderPair: {
-        Pair: {
-            sum0: 0
-        }
+        sum0: 0
     }
 
 };
@@ -358,22 +435,13 @@ var fillStatus = function () {
     while (--i) {
         status.on['channel' + i] = false;
         status.fader['channel' + i] = 0;
-        status.faderPan['channel' + i] = 0;
+        status.faderEffect['main']['Pan']['channel' + i] = 0;
         status.faderName['channel' + i] = 'CH' + i;
-        for (j in status.faderComp) {
-            status.faderComp[j]['channel' + i] = 0;
-        };
-        for (j in status.faderDelay) {
-            status.faderDelay[j]['channel' + i] = 0;
-        };
-        for (j in status.faderEQ) {
-            status.faderEQ[j]['channel' + i] = 0;
-        };
-        for (j in status.faderGate) {
-            status.faderGate[j]['channel' + i] = 0;
-        };
-        for (j in status.faderPair) {
-            status.faderPair[j]['channel' + i] = 0;
+        status.faderPair['channel' + i] = 0;
+        for (x in status.faderEffect){
+            for (j in status.faderEffect[x]) {
+                status.faderEffect[x][j]['channel' + i] = 0;
+            };
         }
     }
 
@@ -387,13 +455,13 @@ var fillStatus = function () {
 
         while (--i) {
             status.fader['auxsend' + j + i] = 0;
-            status.faderPan['auxsend' + j + i] = 0;
+            status.faderEffect['main']['Pan']['auxsend' + j + i] = 0; 
             status.faderName['auxsend' + j + i] = 'AUXSEND ' + i;
         }
     }
 
 
-    // master
+    // master aux
 
     i = config.auxCount + 1;
 
@@ -401,7 +469,10 @@ var fillStatus = function () {
         status.on['aux' + i] = false;
         status.fader['aux' + i] = 0;
         status.faderName['aux' + i] = 'AUX ' + i;
+        status.faderPair['aux' + i] = 0;
     }
+
+    // master bus
 
     i = config.busCount + 1;
 
@@ -409,6 +480,7 @@ var fillStatus = function () {
         status.on['bus' + i] = false;
         status.fader['bus' + i] = 0;
         status.faderName['bus' + i] = 'BUS ' + i;
+        status.faderPair['bus' + i] = 0;
     }
 
 };
@@ -462,7 +534,7 @@ var deviceMessageHandler = function (message) {
     // analyze message
 
     // sysEx message
-    if (messageBeginsWith(config.sysExStartSpecific) || messageBeginsWith(config.sysExStart)) {
+    if (messageBeginsWith(config.sysExStart) ) {
 
         // program change -> sync again
         if (message[5] == 16) {
@@ -494,98 +566,354 @@ var deviceMessageHandler = function (message) {
             outMessage = {
                 type: "level",
                 target: (message[6] == 0 ? "channel" : (message[6] == 1 ? "bus" : (message[6] == 2 ? "aux" : "sum"))), 
-                levels: {}
+                levels: {},
+                prop: message[7]
             };
 
             for (i = 0; message[9 + 2 * i] != 247; i++) {
                 outMessage.levels[i + 1] = message[(9 + 2 * i)];
             }
         }
-        // fader names
-        else if (message[6] == 04) {
-            faderNameCache += String.fromCharCode(message[12]) || ' ';
-            if (message[7] - 4 == 15) {
-                outMessage = {
-                    type: "faderName",
-                    target: "channel",
-                    num: message[8] + 1,
-                    value: faderNameCache
-                };
-                faderNameCache = '';
-                status.faderName['channel' + outMessage.num] = outMessage.value;
-            }
-        }
         // fader or on-button messages and effects
         else {
             switch (message[6]) {
-
-                case config.sysExElements.channelGate:
+                
+                case config.sysExElements.channelEffect['gate']:
                     num = message[8] + 1;
-                    value = config.data2Fader(message.slice(9));
+                    value = config.data2Value(message.slice(9));
 
-                    status.faderGate[Object.keys(status.faderGate)[message[7]]]['channel' + num] = value;
+                    status.faderEffect['gate'][Object.keys(status.faderEffect['gate'])[message[7]]]['channel' + i] = value;
 
                     outMessage = {
-                        type: 'faderGate',
-                        target: "channel",
+                        type: 'faderEffect',
+                        target: 'gate',
                         num: num,
                         value: value,
-                        prop: Object.keys(status.faderGate)[message[7]]
+                        prop: Object.keys(status.faderEffect['gate'])[message[7]],
+                        faderType: 'channel'
                     };
 
                     break;
 
-                case config.sysExElements.channelComp:
+                case config.sysExElements.channelEffect['comp']:
                     num = message[8] + 1;
-                    value = config.data2Fader(message.slice(9));
-                    status.faderComp[Object.keys(status.faderComp)[message[7]]]['channel' + num] = value;
+                    value = config.data2Value(message.slice(9));
+                    status.faderEffect['comp'][Object.keys(status.faderEffect['comp'])[message[7]]]['channel' + num] = value;
 
                     outMessage = {
-                        type: 'faderComp',
-                        target: "channel",
+                        type: 'faderEffect',
+                        target: "comp",
                         num: num,
                         value: value,
-                        prop: Object.keys(status.faderComp)[message[7]]
+                        prop: Object.keys(status.faderEffect['comp'])[message[7]],
+                        faderType: 'channel'
                     };
 
                     break;
 
-                case config.sysExElements.channelEQ:
+                case config.sysExElements.channelEffect['eq']:
                     num = message[8] + 1;
-                    value = config.data2Fader(message.slice(9));
+                    value = config.data2Value(message.slice(9));
 
-                    status.faderEQ[Object.keys(status.faderEQ)[message[7]]]['channel' + num] = value;
+                    status.faderEffect['eq'][Object.keys(status.faderEffect['eq'])[message[7]]]['channel' + num] = value;
 
                     outMessage = {
-                        type: 'faderEQ',
-                        target: "channel",
+                        type: 'faderEffect',
+                        target: "eq",
                         num: num,
                         value: value,
-                        prop: Object.keys(status.faderEQ)[message[7]]
+                        prop: Object.keys(status.faderEffect['eq'])[message[7]],
+                        faderType: 'channel'
                     };
 
                     break;
 
-                case config.sysExElements.channelDelay:
+                case config.sysExElements.channelEffect['delay']:
                     num = message[8] + 1;
-                    value = config.data2Fader(message.slice(9));
+                    value = config.data2Value(message.slice(9));
 
-                    status.faderDelay[Object.keys(status.faderDelay)[message[7]]]['channel' + num] = value;
+                    status.faderEffect['delay'][Object.keys(status.faderEffect['delay'])[message[7]]]['channel' + num] = value;
 
                     outMessage = {
-                        type: 'faderDelay',
-                        target: "channel",
+                        type: 'faderEffect',
+                        target: "delay",
                         num: num,
                         value: value,
-                        prop: Object.keys(status.faderDelay)[message[7]]
+                        prop: Object.keys(status.faderEffect['delay'])[message[7]],
+                        faderType: 'channel'
                     };
 
                     break;
 
+                case config.sysExElements.channelPan:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    status.faderEffect['main']['Pan']['channel' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "main",
+                        num: num,
+                        value: value,
+                        prop: 'Pan',
+                        faderType: 'channel'
+                    };
+
+                    break;
+
+                case config.sysExElements.sumEffect['comp']:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+                    status.faderEffect['comp'][Object.keys(status.faderEffect['comp'])[message[7]]]['sum' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "comp",
+                        num: num,
+                        value: value,
+                        prop: Object.keys(status.faderEffect['comp'])[message[7]],
+                        faderType: 'sum'
+                    };
+
+                    break;
+
+                case config.sysExElements.sumEffect['eq']:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    status.faderEffect['eq'][Object.keys(status.faderEffect['eq'])[message[7]]]['sum' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "eq",
+                        num: num,
+                        value: value,
+                        prop: Object.keys(status.faderEffect['eq'])[message[7]],
+                        faderType: 'sum'
+                    };
+
+                    break;
+
+                case config.sysExElements.sumEffect['delay']:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    if (message[7] == 0) {
+                        property = "On"
+                    } else {
+                        property = "Time"
+                    }
+                    status.faderEffect['delay'][property]['sum' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "delay",
+                        num: num,
+                        value: value,
+                        prop: property,
+                        faderType: 'sum'
+                    };
+
+                    break;
+
+                case config.sysExElements.sumPan:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    status.faderEffect['main']['Pan']['sum' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "main",
+                        num: num,
+                        value: value,
+                        prop: 'Pan',
+                        faderType: 'sum'
+                    };
+
+                    break;
+
+                case config.sysExElements.auxEffect['comp']:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+                    status.faderEffect['comp'][Object.keys(status.faderEffect['comp'])[message[7]]]['aux' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "comp",
+                        num: num,
+                        value: value,
+                        prop: Object.keys(status.faderEffect['comp'])[message[7]],
+                        faderType: 'aux'
+                    };
+
+                    break;
+
+                case config.sysExElements.auxEffect['eq']:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    status.faderEffect['eq'][Object.keys(status.faderEffect['eq'])[message[7]]]['aux' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "eq",
+                        num: num,
+                        value: value,
+                        prop: Object.keys(status.faderEffect['eq'])[message[7]],
+                        faderType: 'aux'
+                    };
+
+                    break;
+
+                case config.sysExElements.auxEffect['delay']:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    if (message[7] == 0) {
+                        property = "On"
+                    } else {
+                        property = "Time"
+                    }
+                    status.faderEffect['delay'][property]['aux' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "delay",
+                        num: num,
+                        value: value,
+                        prop: property,
+                        faderType: 'aux'
+                    };
+
+                    break;
+
+                case config.sysExElements.auxPan:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    status.faderEffect['main']['Pan']['aux' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "main",
+                        num: num,
+                        value: value,
+                        prop: 'Pan',
+                        faderType: 'aux'
+                    };
+
+                    break;
+
+                case config.sysExElements.busEffect['comp']:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+                    status.faderEffect['comp'][Object.keys(status.faderEffect['comp'])[message[7]]]['subusm' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "comp",
+                        num: num,
+                        value: value,
+                        prop: Object.keys(status.faderEffect['comp'])[message[7]],
+                        faderType: 'bus'
+                    };
+
+                    break;
+
+                case config.sysExElements.busEffect['eq']:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    status.faderEffect['eq'][Object.keys(status.faderEffect['eq'])[message[7]]]['bus' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "eq",
+                        num: num,
+                        value: value,
+                        prop: Object.keys(status.faderEffect['eq'])[message[7]],
+                        faderType: 'bus'
+                    };
+
+                    break;
+
+                case config.sysExElements.busEffect['delay']:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    if (message[7] == 0) {
+                        property = "On"
+                    } else {
+                        property = "Time"
+                    }
+                    status.faderEffect['delay'][property]['bus' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "delay",
+                        num: num,
+                        value: value,
+                        prop: property,
+                        faderType: 'bus'
+                    };
+
+                    break;
+
+                case config.sysExElements.busPan:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    status.faderEffect['main']['Pan']['bus' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "main",
+                        num: num,
+                        value: value,
+                        prop: 'Pan',
+                        faderType: 'bus'
+                    };
+
+                    break;
+
+                case config.sysExElements.channelPhase:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    status.faderEffect['main']['Phase']['channel' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "main",
+                        num: num,
+                        value: value,
+                        prop: 'Phase'
+                    };
+
+                    break;
+
+                case config.sysExElements.channelRouting:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+
+                    status.faderEffect['main'][Object.keys(status.faderEffect['main'])[message[7]+2]]['channel' + num] = value;
+
+                    outMessage = {
+                        type: 'faderEffect',
+                        target: "main",
+                        num: num,
+                        value: value,
+                        prop: Object.keys(status.faderEffect['main'])[message[7]+2]
+                    };
+
+                    break;
+                    
                 case config.sysExElements.channelPair:
                     num = message[8] + 1;
-                    value = config.data2Fader(message.slice(9));
-                    status.faderPair[Object.keys(status.faderPair)[message[7]]]['channel' + num] = value;
+                    value = config.data2Value(message.slice(9));
+                    status.faderPair['channel' + num] = value;
 
                     outMessage = {
                         type: 'faderPair',
@@ -597,30 +925,9 @@ var deviceMessageHandler = function (message) {
 
                     break;
 
-                case config.sysExElements.channelPan:
-                    num = message[8] + 1;
-                    if (config.data2Fader(message.slice(9)) > 1000) {
-                        value = 'L ' + (config.data2Fader(message.slice(9)) - 16384) * (-1);
-                    } else if (config.data2Fader(message.slice(9)) == 0) {
-                        value = 'CENTER';
-                    } else {
-                        value = 'R ' + config.data2Fader(message.slice(9));
-                    }
-
-                    status.faderPan['channel' + num] = value;
-
-                    outMessage = {
-                        type: "faderPan",
-                        target: "channel",
-                        num: num,
-                        value: value
-                    };
-
-                    break;
-
                 case config.sysExElements.channelFader:
                     num = message[8] + 1;
-                    value = config.data2Fader(message.slice(9));
+                    value = config.data2Value(message.slice(9));
 
                     if (!aboveThreshold(value, status.fader['channel' + num])) {
                         return;
@@ -636,28 +943,9 @@ var deviceMessageHandler = function (message) {
                     };
                     break;
 
-                case config.sysExElements.sumPan:
-                    if (config.data2Fader(message.slice(9)) > 1000) {
-                        value = 'L ' + (config.data2Fader(message.slice(9)) - 16384) * (-1);
-                    } else if (config.data2Fader(message.slice(9)) == 0) {
-                        value = 'CENTER';
-                    } else {
-                        value = 'R ' + config.data2Fader(message.slice(9));
-                    }
-
-                    status.faderPan['sum0'] = value;
-
-                    outMessage = {
-                        type: "faderPan",
-                        target: "sum",
-                        num: 0,
-                        value: value
-                    };
-
-                    break;
 
                 case config.sysExElements.sumFader:
-                    value = config.data2Fader(message.slice(9));
+                    value = config.data2Value(message.slice(9));
 
                     if (!aboveThreshold(value, status.fader['sum0'])) {
                         return;
@@ -676,7 +964,7 @@ var deviceMessageHandler = function (message) {
                 case config.sysExElements.auxSendFader:
                     num = message[8] + 1;
                     num2 = (message[7] + 1) / 3;
-                    value = config.data2Fader(message.slice(9));
+                    value = config.data2Value(message.slice(9));
 
                     if (!aboveThreshold(value, status.fader['auxsend' + num2 + num])) {
                         return;
@@ -692,33 +980,25 @@ var deviceMessageHandler = function (message) {
                         value: value
                     };
                     break;
-                
-                    case config.sysExElements.auxSendPan:
-                        num = message[8] + 1;
-                        num2 = message[7] + 1;
-                        if (config.data2Fader(message.slice(9)) > 1000) {
-                            value = 'L ' + (config.data2Fader(message.slice(9)) - 16384) * (-1);
-                        } else if (config.data2Fader(message.slice(9)) == 0) {
-                            value = 'CENTER';
-                        } else {
-                            value = 'R ' + config.data2Fader(message.slice(9));
-                        }
-    
-                        status.faderPan['auxsend' + num2 + num] = value;
-    
-                        outMessage = {
-                            type: "faderPan",
-                            target: "auxsend",
-                            num: num,
-                            num2: num2,
-                            value: value
-                        };
-    
-                        break;
 
+                case config.sysExElements.auxPair:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+                    status.faderPair['aux' + num] = value;
+    
+                    outMessage = {
+                        type: 'faderPair',
+                        target: "aux",
+                        num: num,
+                        prop: Object.keys(status.faderPair)[message[7]],
+                        value: value
+                    };
+    
+                    break;
+                        
                 case config.sysExElements.auxFader:
                     num = message[8] + 1;
-                    value = config.data2Fader(message.slice(9));
+                    value = config.data2Value(message.slice(9));
 
                     if (!aboveThreshold(value, status.fader['aux' + num])) {
                         return;
@@ -734,9 +1014,25 @@ var deviceMessageHandler = function (message) {
                     };
                     break;
 
+                
+                case config.sysExElements.busPair:
+                    num = message[8] + 1;
+                    value = config.data2Value(message.slice(9));
+                    status.faderPair['bus' + num] = value;
+    
+                    outMessage = {
+                        type: 'faderPair',
+                        target: "bus",
+                        num: num,
+                        prop: Object.keys(status.faderPair)[message[7]],
+                        value: value
+                    };
+    
+                    break;
+
                 case config.sysExElements.busFader:
                     num = message[8] + 1;
-                    value = config.data2Fader(message.slice(9));
+                    value = config.data2Value(message.slice(9));
 
                     if (!aboveThreshold(value, status.fader['bus' + num])) {
                         return;
@@ -824,16 +1120,71 @@ var deviceMessageHandler = function (message) {
                     break;
 
             }
+        
         }
     }
-
+    if (messageBeginsWith(config.sysExStartSpecific) ) {
+        // fader names
+        if (message[5] == 02 && message[6] == 04) {
+            faderNameCache += String.fromCharCode(message[12]) || ' ';
+            if (message[7] - 4 == 15) {
+                outMessage = {
+                    type: "faderName",
+                    target: "channel",
+                    num: message[8] + 1,
+                    value: faderNameCache
+                };
+                faderNameCache = '';
+                status.faderName['channel' + outMessage.num] = outMessage.value;
+            }
+        // BUS fader names    
+        } else if (message[5] == 02 && message[6] == 15) {
+            faderNameCache += String.fromCharCode(message[12]) || ' ';
+            if (message[7] - 4 == 15) {
+                outMessage = {
+                    type: "busName",
+                    target: "channel",
+                    num: message[8] + 1,
+                    value: faderNameCache
+                };
+                faderNameCache = '';
+                status.faderName['bus' + outMessage.num] = outMessage.value;
+            }
+        // AUX fader names    
+        } else if (message[5] == 02 && message[6] == 16) {
+            faderNameCache += String.fromCharCode(message[12]) || ' ';
+            if (message[7] - 4 == 15) {
+                outMessage = {
+                    type: "auxName",
+                    target: "channel",
+                    num: message[8] + 1,
+                    value: faderNameCache
+                };
+                faderNameCache = '';
+                status.faderName['aux' + outMessage.num] = outMessage.value;
+            }
+        // SUM fader names    
+        } else if (message[5] == 02 && message[6] == 18) {
+            faderNameCache += String.fromCharCode(message[12]) || ' ';
+            if (message[7] - 4 == 15) {
+                outMessage = {
+                    type: "sumName",
+                    target: "channel",
+                    num: message[8] + 1,
+                    value: faderNameCache
+                };
+                faderNameCache = '';
+                status.faderName['sum' + outMessage.num] = outMessage.value;
+            }
+        }
+    }
 
     if (outMessage) {
         app.controllers.socket.broadcast(outMessage);
     }
     // log unknown messages
     else {
-        //        console.log('[mixer] Unknown MIDI message: [' + message + ']');
+                console.log('[mixer] Unknown MIDI message: [' + message + ']');
     }
 };
 
@@ -851,7 +1202,7 @@ var deviceMessageHandler = function (message) {
  * @param socket Client connection
  */
 var clientMessageHandler = function (message, socket) {
-    var i, j, groupId;
+    var i, j, groupId, pairNum, pairAux;
 
     // convert auxsend on to channel on
     if (message.type === 'on' && message.target === 'auxsend') {
@@ -909,40 +1260,57 @@ var clientMessageHandler = function (message, socket) {
                     setSumOn(message.value);
                     break;
             }
-
             break;
 
         // control effect settings
-        case "faderGate":
-
-            setFaderEffect(config.sysExElements.faderGate, Object.keys(status.faderGate).indexOf(message.target), message.num, message.value)
+        case "faderEffect":
+            if (message.target == "channel") {
+                if (message.effect == "main") {
+                    if( message.prop == "Pan") {
+                        setFaderEffect(config.sysExElements.channelPan, 0, message.num, message.value);
+                    } else if (message.prop == "Phase") {
+                        setFaderEffect(config.sysExElements.channelPhase, 0, message.num, message.value);
+                    } else {
+                        setFaderEffect(config.sysExElements.channelRouting, parseInt(Object.keys(status.faderEffect[message.effect]).indexOf(message.prop) - 2), message.num, message.value);
+                    } 
+                } else {
+                    setFaderEffect(config.sysExElements.channelEffect[message.effect], Object.keys(status.faderEffect[message.effect]).indexOf(message.prop), message.num, message.value);
+                } 
+            } else if (message.target == "sum"){
+                if( message.prop == "Pan") {
+                    setFaderEffect(config.sysExElements.sumPan, 0, message.num, message.value);
+                } else if (message.effect == "delay") {
+                    setFaderEffect(config.sysExElements.sumEffect[message.effect], ((message.prop == 'On') ? 0 : 1), message.num, message.value);
+                } else {
+                    setFaderEffect(config.sysExElements.sumEffect[message.effect], Object.keys(status.faderEffect[message.effect]).indexOf(message.prop), message.num, message.value); 
+                }
+            } else if (message.target == "bus"){
+                if( message.prop == "Pan") {
+                    setFaderEffect(config.sysExElements.busPan, 0, message.num, message.value);
+                } else if (message.effect == "delay") {
+                    setFaderEffect(config.sysExElements.busEffect[message.effect], ((message.prop == 'ON') ? 0 : 1), message.num, message.value);
+                } else {
+                    setFaderEffect(config.sysExElements.busEffect[message.effect], Object.keys(status.faderEffect[message.effect]).indexOf(message.prop), message.num, message.value); 
+                }
+            } else if (message.target == "aux"){
+                if( message.prop == "Pan") {
+                    setFaderEffect(config.sysExElements.auxPan, 0, message.num, message.value);
+                } else if (message.effect == "delay") {
+                    setFaderEffect(config.sysExElements.auxEffect[message.effect], ((message.prop == 'On') ? 0 : 1), message.num, message.value);
+                } else {
+                    setFaderEffect(config.sysExElements.auxEffect[message.effect], Object.keys(status.faderEffect[message.effect]).indexOf(message.prop), message.num, message.value); 
+                }
+            }
+            status.faderEffect[message.effect][message.prop][message.target + message.num] = message.value;
 
             break;
 
-        case "faderComp":
+        case "syncEffect":
 
-            setFaderEffect(config.sysExElements.faderComp, Object.keys(status.faderComp).indexOf(message.target), message.num, message.value)
-
-            break;
-
-        case "faderEQ":
-
-            setFaderEffect(config.sysExElements.faderEQ, Object.keys(status.faderEQ).indexOf(message.target), message.num, message.value)
+            sendCannelEffectRequest(message.num, message.target);
 
             break;
-
-        case "faderDelay":
-
-            setFaderEffect(config.sysExElements.faderDelay, Object.keys(status.faderDelay).indexOf(message.target), message.num, message.value)
-
-            break;
-
-        case "faderPair":
-
-            setFaderEffect(config.sysExElements.faderPair, Object.keys(status.faderPair).indexOf(message.target), message.num, message.value)
-
-            break;
-
+        
         case "sync":
 
             app.controllers.socket.send(socket, {
@@ -957,9 +1325,48 @@ var clientMessageHandler = function (message, socket) {
     if (message.type === 'fader' || message.type === 'on') {
         app.controllers.socket.broadcastToOthers(socket, message);
 
-        // apply to all channels of group
+        // apply to all channels of group or a pair
 
-        if (message.target === 'channel' || message.target === 'auxsend') {
+        if (message.target === 'channel' || message.target === 'auxsend' || message.target === 'aux' || message.target === 'bus') {
+            // pairing partner has to be transferred
+            if(status.faderPair && status.faderPair[message.target + message.num] == 1) {
+                if (message.num % 2){
+					pairNum = parseInt(message.num) + 1;
+				} else {
+					pairNum = parseInt(message.num) - 1;
+				}
+                // pairing of channels inside of a tab
+                app.controllers.socket.broadcastToOthers(socket, {
+                    type: message.type,
+                    target: message.target,
+                    num: pairNum,
+                    num2: message.num2,
+                    value: message.value
+                });
+                // pairing of channels in paired aux tabs
+                if(message.target === 'auxsend'){
+                    if (message.num % 2){
+                        pairNum = parseInt(message.num) + 1;
+                    } else {
+                        pairNum = parseInt(message.num) - 1;
+                    }
+                    app.controllers.socket.broadcastToOthers(socket, {
+                        type: message.type,
+                        target: message.target,
+                        num: pairNum,
+                        num2: message.num2 + pairAux,
+                        value: message.value
+                    });
+                    app.controllers.socket.broadcastToOthers(socket, {
+                        type: message.type,
+                        target: message.target,
+                        num: message.num,
+                        num2: message.num2 + pairAux,
+                        value: message.value
+                    });
+                }
+            }
+            
             i = app.clientConfig.groups.length;
 
             while (i--) {
@@ -1008,7 +1415,7 @@ var setChannelFader = function (channel, value) {
 
     device.send(
         config.parameterChange(
-            [config.sysExElements.channelFader, 0, channel - 1].concat(config.fader2Data(value))
+            [config.sysExElements.channelFader, 0, channel - 1].concat(config.value2Data(value))
         )
     );
 
@@ -1039,7 +1446,7 @@ var setFaderEffect = function (effect, property, channel, parameter) {
 
     device.send(
         config.parameterChange(
-            [effect, property, channel - 1].concat(config.fader2Data(parameter[Object.keys(parameter)[j]]))
+            [effect, property, channel - 1].concat(config.value2Data(parameter))
         )
 
     )
@@ -1050,7 +1457,7 @@ var setFaderEffect = function (effect, property, channel, parameter) {
 var setSumFader = function (value) {
     device.send(
         config.parameterChange(
-            [config.sysExElements.sumFader, 0, 0].concat(config.fader2Data(value))
+            [config.sysExElements.sumFader, 0, 0].concat(config.value2Data(value))
         )
     );
 
@@ -1080,7 +1487,7 @@ var setAuxSendFader = function (aux, channel, value) {
 
     device.send(
         config.parameterChange(
-            [config.sysExElements.auxSendFader, config.auxSendParam(aux), channel - 1].concat(config.fader2Data(value))
+            [config.sysExElements.auxSendFader, config.auxSendParam(aux), channel - 1].concat(config.value2Data(value))
         )
     );
 
@@ -1095,7 +1502,7 @@ var setAuxFader = function (aux, value) {
 
     device.send(
         config.parameterChange(
-            [config.sysExElements.auxFader, 0, aux - 1].concat(config.fader2Data(value))
+            [config.sysExElements.auxFader, 0, aux - 1].concat(config.value2Data(value))
         )
     );
 
@@ -1125,7 +1532,7 @@ var setBusFader = function (bus, value) {
 
     device.send(
         config.parameterChange(
-            [config.sysExElements.busFader, 0, bus - 1].concat(config.fader2Data(value))
+            [config.sysExElements.busFader, 0, bus - 1].concat(config.value2Data(value))
         )
     );
 
@@ -1152,6 +1559,8 @@ var setBusOn = function (bus, on) {
  */
 
 var sendRemoteMeterRequest = function () {
+    // effect meter request
+    config.remoteMeterRequest[7] = 0;
     // iterate through channel, aux, bus
     for(i = 0; i < 3; i++) {
         config.remoteMeterRequest[6] = i;
@@ -1180,36 +1589,48 @@ var sendFaderNameRequest = function () {
     }
 };
 
-var sendCannelEffectRequest = function (channel) {
+var sendCannelEffectRequest = function (channel, type) {
 
-    // channelGate: request for all parameters of a channel
-    for (j = 0; j < Object.keys(status.faderGate).length; j++) {
-        device.send(
-            config.parameterRequest([config.sysExElements.channelGate, j, channel - 1])
-        )
-    };
+    // channelEffect: request for all parameters of a channel
+    if (type == 'channel') {
+        for (x in status.faderEffect) {
+            for (j = 0; j < Object.keys(status.faderEffect[x]).length; j++) {
+                device.send(
+                    config.parameterRequest([config.sysExElements.channelEffect[x], j, channel - 1])
+                )
+            };
+        }
+    } else if (type == 'bus') {
+        for (x of ['comp', 'eq', 'delay']) {
+            for (j = 0; j < Object.keys(status.faderEffect[x]).length; j++) {
+                device.send(
+                    config.parameterRequest([config.sysExElements.busEffect[x], j, channel - 1])
+                )
+            };
+        }
+        device.send(config.parameterRequest([config.sysExElements.busPan, 0, channel - 1]))
 
-    // channelComp: request for all parameters of a channel
-    for (j = 0; j < Object.keys(status.faderComp).length; j++) {
-        device.send(
-            config.parameterRequest([config.sysExElements.channelComp, j, channel - 1])
-        )
-    };
+    } else if (type == 'aux') {
+        for (x of ['comp', 'eq', 'delay']) {
+            for (j = 0; j < Object.keys(status.faderEffect[x]).length; j++) {
+                device.send(
+                    config.parameterRequest([config.sysExElements.auxEffect[x], j, channel - 1])
+                )
+            };
+        }
+        device.send(config.parameterRequest([config.sysExElements.auxPan, 0, channel - 1]))
 
-    // channelEQ: request for all parameters of a channel
-    for (j = 0; j < Object.keys(status.faderEQ).length; j++) {
-        device.send(
-            config.parameterRequest([config.sysExElements.channelEQ, j, channel - 1])
-        )
-    };
-
-    // channelDelay: request for all parameters of a channel
-    for (j = 0; j < Object.keys(status.faderDelay).length; j++) {
-        device.send(
-            config.parameterRequest([config.sysExElements.channelDelay, j, channel - 1])
-        )
-    };
-
+    } else if (type == 'sum') {
+        for (x of ['comp', 'eq', 'delay']) {
+            for (j = 0; j < Object.keys(status.faderEffect[x]).length; j++) {
+                device.send(
+                    config.parameterRequest([config.sysExElements.sumEffect[x], j, channel - 1])
+                )
+            };
+        }
+        device.send(config.parameterRequest([config.sysExElements.sumPan, 0, channel - 1]))
+    }
+    
 };
 
 var sendSyncRequest = function () {
@@ -1218,7 +1639,7 @@ var sendSyncRequest = function () {
         if (config.sysExElements.hasOwnProperty(i)) {
 
             // multiple parameter per channel sends are handled later
-            if (i.indexOf('auxSend') === 0 || i.indexOf('channelGate') === 0 || i.indexOf('channelComp') === 0 || i.indexOf('channelEQ') === 0 || i.indexOf('channelDelay') === 0 || i.indexOf('channelPair') === 0) {
+            if (i.indexOf('auxSend') === 0 || i.indexOf('channelGate') === 0 || i.indexOf('channelComp') === 0 || i.indexOf('channelEQ') === 0 || i.indexOf('channelDelay') === 0) {
                 continue;
             }
 
@@ -1271,18 +1692,6 @@ var sendSyncRequest = function () {
             );
         }
     };
-
-    // channelPair: requests parameter for all channel
-    for (i = 0; i < config.channelCount; i++) {
-        for (j = 0; j < Object.keys(status.faderPair).length; j++) {
-            device.send(
-                config.parameterRequest(
-                    [config.sysExElements.channelPair, j, i]
-                )
-            );
-        }
-    };
-
 
 };
 
