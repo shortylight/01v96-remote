@@ -449,6 +449,13 @@ body {
     overflow: hidden;
 }
 
+.effect-label {
+	margin-bottom:1em;
+	margin-top:1em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
 @media screen and (max-height:950px) {
 	.fader-db-label-left {
 		font-size: 60%;
@@ -622,6 +629,10 @@ body {
 	background-color: #116284;
 	position: relative;
 	padding: 10px;
+	margin-top: 10px;
+	display: flex; 
+	align-items: center; 
+	justify-content: space-evenly;
 }
 
 .effectControl5 { 
@@ -741,3 +752,5 @@ button {
 .div19 { grid-area: 4 / 3 / 5 / 4;}
 .div20 { grid-area: 4 / 4 / 5 / 5;}
 .effect_button {border: 1px solid white; display: flex; align-items: center; justify-content: space-around; line-height: 2em; background-color: #11846D; cursor:pointer;}
+.effect_button_selected {border: 2px solid lime}
+.effect_button_selected_off {background-color: rgba(200,100,100,1)}
