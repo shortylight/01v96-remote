@@ -541,39 +541,6 @@ var deviceMessageHandler = function (message) {
             sendSyncRequest();
             return;
         }
-        // remote meter - levels
-        else if (message[5] == 33) {
-            // echo messages from meter requests are accidentally
-            // recognized as meter messages
-            // alternatively more analysis of message header needed
-            if (message.length < 13) {
-                return;
-            }
-
-            // do not forward every meter level message
-            if(message[6] == 0) {
-                meterFilterCount++;
-           }
-
-            if (meterFilterCount === config.remoteMeterInterval) {
-                meterFilterCount = 0;
-            }
-
-            if (meterFilterCount !== 0) {
-                return;
-            }
-
-            outMessage = {
-                type: "level",
-                target: (message[6] == 0 ? "channel" : (message[6] == 1 ? "bus" : (message[6] == 2 ? "aux" : "sum"))), 
-                levels: {},
-                prop: message[7]
-            };
-
-            for (i = 0; message[9 + 2 * i] != 247; i++) {
-                outMessage.levels[i + 1] = message[(9 + 2 * i)];
-            }
-        }
         // fader or on-button messages and effects
         else {
             switch (message[6]) {
@@ -1124,8 +1091,12 @@ var deviceMessageHandler = function (message) {
         }
     }
     if (messageBeginsWith(config.sysExStartSpecific) ) {
+        // program change -> sync again
+        if (message[5] == 16) {
+        sendSyncRequest();
+        return;
         // fader names
-        if (message[5] == 02 && message[6] == 04) {
+        }else if (message[5] == 02 && message[6] == 04) {
             faderNameCache += String.fromCharCode(message[12]) || ' ';
             if (message[7] - 4 == 15) {
                 outMessage = {
@@ -1176,6 +1147,38 @@ var deviceMessageHandler = function (message) {
                 faderNameCache = '';
                 status.faderName['sum' + outMessage.num] = outMessage.value;
             }
+        // remote meter - levels
+        } else if (message[5] == 33) {
+            // echo messages from meter requests are accidentally
+            // recognized as meter messages
+            // alternatively more analysis of message header needed
+            if (message.length < 13) {
+                return;
+            }
+
+            // do not forward every meter level message
+            if(message[6] == 0) {
+                meterFilterCount++;
+           }
+
+            if (meterFilterCount === config.remoteMeterInterval) {
+                meterFilterCount = 0;
+            }
+
+            if (meterFilterCount !== 0) {
+                return;
+            }
+
+            outMessage = {
+                type: "level",
+                target: (message[6] == 0 ? "channel" : (message[6] == 1 ? "bus" : (message[6] == 2 ? "aux" : "sum"))), 
+                levels: {},
+                prop: message[7]
+            };
+
+            for (i = 0; message[9 + 2 * i] != 247; i++) {
+                outMessage.levels[i + 1] = message[(9 + 2 * i)];
+            }
         }
     }
 
@@ -1184,7 +1187,7 @@ var deviceMessageHandler = function (message) {
     }
     // log unknown messages
     else {
-                console.log('[mixer] Unknown MIDI message: [' + message + ']');
+        //console.log('[mixer] Unknown MIDI message: [' + message + ']');
     }
 };
 
