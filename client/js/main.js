@@ -1344,8 +1344,8 @@ var remoteApp = {
 		effectControl1HTML = generateEffectControl('effects','property',1,'PROPERTY');
 
 		effectHeadHTML = '<div class="fader-select" id="1" data-id="channel" style="width:20% ; float: left"> &lt;  &lt; </div>\
+		<div class="fader-label" style="position: absolute; top: 5px;">&nbsp;</div>\
 		<div class="fader-select" id="2" data-id="channel" style="width:20% ; float: right"> &gt; &gt; </div>\
-		<div class="fader-label">&nbsp;</div>\
 		<div class="fader-biglabel" style="position: absolute; bottom: 10px; width: calc(100% - 20px)">Channel</div>';
 		
 		// generate configuration inputs
