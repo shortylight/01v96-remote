@@ -45,9 +45,15 @@ var init = function () {
     sendRemoteMeterRequest();
     setInterval(sendRemoteMeterRequest, 10000);
 
-    // periodical channel name request (charwise)
+    // periodical channel, aux, bus name request (charwise)
     sendFaderNameRequest();
-    setInterval(sendFaderNameRequest, 200);
+    setInterval(sendFaderNameRequest, config.remoteNameInterval);
+    sendAuxNameRequest();
+    setInterval(sendAuxNameRequest, config.remoteNameInterval);
+    sendBusNameRequest();
+    setInterval(sendBusNameRequest, config.remoteNameInterval);
+    sendSumNameRequest();
+    setInterval(sendSumNameRequest, config.remoteNameInterval);
 
     // periodical sync request
     fillStatus();
@@ -86,7 +92,7 @@ var config = {
 
     // sysEx parameter change and parameter request
     parameterChange: function (arr, deviceSpecific) {
-        return [240, 67, 16, 62, (deviceSpecific ? 13 : 127), 1].concat(arr, [247]);
+        return [240, 67, 16, 62, (deviceSpecific ? 13 : 127), 1].concat(arr, [247]); // Änderung für spezific
     },
 
     parameterRequest: function (arr, deviceSpecific) {
@@ -222,9 +228,48 @@ var config = {
         0xF7		// End of System Exclusive Message
     ],
 
+    remoteBusNameRequest: [
+        0xF0,		// Start System Exclusive Message
+        0x43,		// Manufacturers ID Number (Yamaha)
+        0x30,		// 3n; n 0..15 MIDI Channel
+        0x3E,		// Model ID (Digital Mixer
+        0x0D,		// (01V96)
+        0x02,		// Adress / Setup Data
+        0x0F,		// Element Number (BusName)
+        0x04,		// Parameter Number (Character Count)
+        0x00,		// Channel Number 
+        0xF7		// End of System Exclusive Message
+    ],
+
+    remoteAuxNameRequest: [
+        0xF0,		// Start System Exclusive Message
+        0x43,		// Manufacturers ID Number (Yamaha)
+        0x30,		// 3n; n 0..15 MIDI Channel
+        0x3E,		// Model ID (Digital Mixer
+        0x0D,		// (01V96)
+        0x02,		// Adress / Setup Data
+        0x10,		// Element Number (auxName)
+        0x04,		// Parameter Number (Character Count)
+        0x00,		// Channel Number 
+        0xF7		// End of System Exclusive Message
+    ],
+
+    remoteSumNameRequest: [
+        0xF0,		// Start System Exclusive Message
+        0x43,		// Manufacturers ID Number (Yamaha)
+        0x30,		// 3n; n 0..15 MIDI Channel
+        0x3E,		// Model ID (Digital Mixer
+        0x0D,		// (01V96)
+        0x02,		// Adress / Setup Data
+        0x18,		// Element Number (sumName)
+        0x04,		// Parameter Number (Character Count)
+        0x00,		// Channel Number 
+        0xF7		// End of System Exclusive Message
+    ],
+
     // interval for remote meter level transmission to the client
     // value*50msec
-    remoteFaderNameInterval: 400 // not used at the moment
+    remoteNameInterval: 50000 
 };
 
 
@@ -1093,8 +1138,8 @@ var deviceMessageHandler = function (message) {
     if (messageBeginsWith(config.sysExStartSpecific) ) {
         // program change -> sync again
         if (message[5] == 16) {
-        sendSyncRequest();
-        return;
+            sendSyncRequest();
+            return;
         // fader names
         }else if (message[5] == 02 && message[6] == 04) {
             faderNameCache += String.fromCharCode(message[12]) || ' ';
@@ -1264,6 +1309,11 @@ var clientMessageHandler = function (message, socket) {
                     break;
             }
             break;
+
+        // set channel, aux, bus, sum names
+        case "faderName":
+            setName(message.target, message.num, message.value);
+        break;
 
         // control effect settings
         case "faderEffect":
@@ -1455,7 +1505,22 @@ var setFaderEffect = function (effect, property, channel, parameter) {
     )
 };
 
-
+//  set names for channel, aux, bus, sum 
+var setName = function (property, number, name) {
+    for (i=0; i < name.length; i++) {
+        if ( property == 'channel') {
+            device.send([0xF0,0x43,0x10,0x3E,0x0D,0x02,0x04].concat(i + 4).concat(number - 1).concat(config.value2Data(name.charCodeAt(i)),[247]))
+        } else if ( property == 'bus') {
+            device.send([0xF0,0x43,0x10,0x3E,0x0D,0x02,0x0F].concat(i + 4).concat(number - 1).concat(config.value2Data(name.charCodeAt(i)),[247]))
+        } else if ( property == 'aux') {
+            device.send([0xF0,0x43,0x10,0x3E,0x0D,0x02,0x10].concat(i + 4).concat(number - 1).concat(config.value2Data(name.charCodeAt(i)),[247]))
+        } else if ( property == 'sum') {
+            device.send([0xF0,0x43,0x10,0x3E,0x0D,0x02,0x08].concat(i + 4).concat(number - 1).concat(config.value2Data(name.charCodeAt(i)),[247]))
+        } else {
+            console.log('[mixer] Invalid name type ' + property);
+        }
+    }
+};
 
 var setSumFader = function (value) {
     device.send(
@@ -1577,17 +1642,77 @@ var sendRemoteMeterRequest = function () {
 };
 
 var sendFaderNameRequest = function () {
-    device.send(config.remoteFaderNameRequest);
+    while (true) {
+        device.send(config.remoteFaderNameRequest);
+            // character count
+            config.remoteFaderNameRequest[7]++;
+            if (config.remoteFaderNameRequest[7] > 0x13) {
+                config.remoteFaderNameRequest[7] = 0x04;
 
-    // character count
-    config.remoteFaderNameRequest[7]++;
-    if (config.remoteFaderNameRequest[7] > 0x13) {
-        config.remoteFaderNameRequest[7] = 0x04;
+                // channel number
+                config.remoteFaderNameRequest[8]++;
+                if (config.remoteFaderNameRequest[8] > 0x1F) {
+                    config.remoteFaderNameRequest[8] = 0x00;
+                    return
+                }
+            }
+    } 
+    
+};
 
-        // channel number
-        config.remoteFaderNameRequest[8]++;
-        if (config.remoteFaderNameRequest[8] > 0x1F) {
-            config.remoteFaderNameRequest[8] = 0x00;
+var sendAuxNameRequest = function () {
+    while (true) {
+        device.send(config.remoteAuxNameRequest);
+
+        // character count
+        config.remoteAuxNameRequest[7]++;
+        if (config.remoteAuxNameRequest[7] > 0x13) {
+            config.remoteAuxNameRequest[7] = 0x04;
+
+            // aux number
+            config.remoteAuxNameRequest[8]++;
+            if (config.remoteAuxNameRequest[8] > 0x07) {
+                config.remoteAuxNameRequest[8] = 0x00;
+                return
+            }
+        }
+    }
+};
+
+var sendBusNameRequest = function () {
+    while (true) {
+        device.send(config.remoteBusNameRequest);
+
+        // character count
+        config.remoteBusNameRequest[7]++;
+        if (config.remoteBusNameRequest[7] > 0x13) {
+            config.remoteBusNameRequest[7] = 0x04;
+
+            // bus number
+            config.remoteBusNameRequest[8]++;
+            if (config.remoteBusNameRequest[8] > 0x07) {
+                config.remoteBusNameRequest[8] = 0x00;
+                return
+            }
+        }
+    }
+};
+
+var sendSumNameRequest = function () {
+    while (true) {
+        device.send(config.remoteSumNameRequest);
+
+        // character count
+        config.remoteSumNameRequest[7]++;
+        if (config.remoteSumNameRequest[7] > 0x13) {
+            config.remoteSumNameRequest[7] = 0x04;
+
+            // sum number
+            config.remoteSumNameRequest[8]++;
+            if (config.remoteSumNameRequest[8] > 0x01) {
+                config.remoteSumNameRequest[8] = 0x00;
+                return
+            }
         }
     }
 };
