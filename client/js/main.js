@@ -961,6 +961,7 @@ var remoteApp = {
             catch(e) {
                 console.log(e);
                 console.log('invalid JSON WebSocket message!');
+				console.log(JSON,stringify(message.data));
             }
 		};
 	},
@@ -2026,7 +2027,6 @@ var remoteApp = {
         }
 		//  faderPair message
 		else if(app.status[message.type] && message.type === 'faderPair') {
-			console.log('app.status['+message.type+']['+id+'] ' + app.status[message.type][id]);
 			app.status[message.type][id] = message.value;
         }
 		//  faderEffect (target: gate, eq, comp, delay) message
@@ -2434,7 +2434,6 @@ var remoteApp = {
 				$(this).data('number'),
 				val
 			);
-			console.log('target: ' + $(this).data('target') + 'number: ' + $(this).data('number') + ' value: ' + val)
         });
 
         // groups

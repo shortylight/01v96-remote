@@ -261,7 +261,7 @@ var config = {
         0x3E,		// Model ID (Digital Mixer
         0x0D,		// (01V96)
         0x02,		// Adress / Setup Data
-        0x18,		// Element Number (sumName)
+        0x12,		// Element Number (sumName)
         0x04,		// Parameter Number (Character Count)
         0x00,		// Channel Number 
         0xF7		// End of System Exclusive Message
@@ -1186,7 +1186,7 @@ var deviceMessageHandler = function (message) {
                 outMessage = {
                     type: "sumName",
                     target: "channel",
-                    num: message[8] + 1,
+                    num: message[8],
                     value: faderNameCache
                 };
                 faderNameCache = '';
@@ -1515,7 +1515,7 @@ var setName = function (property, number, name) {
         } else if ( property == 'aux') {
             device.send([0xF0,0x43,0x10,0x3E,0x0D,0x02,0x10].concat(i + 4).concat(number - 1).concat(config.value2Data(name.charCodeAt(i)),[247]))
         } else if ( property == 'sum') {
-            device.send([0xF0,0x43,0x10,0x3E,0x0D,0x02,0x08].concat(i + 4).concat(number - 1).concat(config.value2Data(name.charCodeAt(i)),[247]))
+            device.send([0xF0,0x43,0x10,0x3E,0x0D,0x02,0x12].concat(i + 4).concat(number).concat(config.value2Data(name.charCodeAt(i)),[247]))
         } else {
             console.log('[mixer] Invalid name type ' + property);
         }
