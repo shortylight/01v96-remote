@@ -643,7 +643,7 @@ var remoteApp = {
 				},
 				LowQ: {
 					min: 0,
-					max: 44,
+					max: 41,
 					label: ['table11']
 				},
 				LowF: {
@@ -693,7 +693,7 @@ var remoteApp = {
 				},
 				HiQ: {
 					min: 0,
-					max: 43,
+					max: 42,
 					label: ['table11']
 				},
 				HiF: {
@@ -1654,6 +1654,31 @@ var remoteApp = {
 			if (target == 'property') {
 				// compute and send new value
 				num = app.status.selectedFader;
+				if (app.status.effectFader == 'LowQ') {
+					app.status.faderEffect['eq']['HPFOn'][app.status.selectedFaderType + num] = 0
+					app.sendControlMessage(
+						'faderEffect',
+						app.status.selectedFaderType,
+						num,
+						0,
+						num2,
+						'HPFOn',
+						app.status.activeEffectTab
+					);
+				}
+				if (app.status.effectFader == 'HiQ') {
+					app.status.faderEffect['eq']['LPFOn'][app.status.selectedFaderType + num] = 0
+					app.sendControlMessage(
+						'faderEffect',
+						app.status.selectedFaderType,
+						num,
+						0,
+						num2,
+						'LPFOn',
+						app.status.activeEffectTab
+					);
+				}
+
 				if (app.status.effectFader == "Knee" && app.status.activeEffectTab == 'comp' && app.status.faderEffect['comp']['Type'][app.status.selectedFaderType + num] > 1) {
 					newValue = app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min1'] + Math.round(
 						(1 - newPositionPercent/app.config.maxHandlePercent) * (app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['max1'] - app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min1'])
@@ -1662,6 +1687,9 @@ var remoteApp = {
 					newValue = app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min'] + Math.round(
 						(1 - newPositionPercent/app.config.maxHandlePercent) * (app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['max'] - app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min'])
 					);
+				}
+				if (app.status.effectFader == 'HiQ' && newValue > 40) { 
+					newValue = 42
 				}
 				app.status.faderEffect[app.status.activeEffectTab][app.status.effectFader][app.status.selectedFaderType + num] = newValue;
 				$handle.html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%<br>' + newValue );
@@ -1877,14 +1905,38 @@ var remoteApp = {
 					}
 					app.status.faderEffect[effect][property][target + num] = newValue;	
 
-				}else if(app.config.effectPropertiesSwitch.includes(property) ) {
+				} else if(app.config.effectPropertiesSwitch.includes(property) ) {
 					newValue = app.status.faderEffect[effect][property][target + num] + 1;
 					if (newValue > app.config.propertyRange[effect][property]['max']) {
 						newValue = app.config.propertyRange[effect][property]['min']
 					}
 					app.status.faderEffect[effect][property][target + num] = newValue;
+					if (property == "LPFOn") {
+						app.status.faderEffect[effect]['HiQ'][target + num] = 43;
+						app.sendControlMessage(
+							type,
+							target,
+							num,
+							43,
+							0,
+							'HiQ',
+							effect
+						);
+					}
+					if (property == "HPFOn") {
+						app.status.faderEffect[effect]['LowQ'][target + num] = 44;
+						app.sendControlMessage(
+							type,
+							target,
+							num,
+							44,
+							0,
+							'LowQ',
+							effect
+						);
+					}
 
-				}else {
+				} else {
 					app.status.effectFader = property;
 					newValue = app.status.faderEffect[effect][property][target + num];
 				}
@@ -2015,7 +2067,7 @@ var remoteApp = {
 				app.status.level[(message.target + i)] = message.levels[i];
 			}
 			if (app.status.activeTab == 'effects'){
-				app.status.level['solo1'] = app.status.level[app.status.selectedFaderType+app.status.selectedFader];
+				app.status.level['solo1'] = app.status.level[app.status.selectedFaderType + app.status.selectedFader];
 				app.updateControl('solo',1,'',{level:true});
 			}
 			else {
