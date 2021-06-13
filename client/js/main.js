@@ -568,12 +568,12 @@ var remoteApp = {
 				Hold: {
 					min: 0,
 					max: 215,
-					label: ['table']
+					label: ['table06']
 				},
 				Decay: {
 					min: 0,
 					max: 159,
-					label: ['table']
+					label: ['table07']
 				},
 				Threshold: {
 					min: -540,
@@ -610,22 +610,24 @@ var remoteApp = {
 				Release: {
 					min: 0,
 					max: 159,
-					label: ['table']
+					label: ['table07']
 				},
 				Ratio: {
 					min: 0,
 					max: 15,
-					label: ['table']
+					label: ['table08']
 				},
 				Gain: {
 					min: 0,
 					max: 180,
-					label: ['table']
+					label: ['x 0.1 dB']
 				},
 				Knee: {
 					min: 0,
-					max: 89,
-					label: ['table']
+					max: 5,
+					label: ['table10'],
+					min1: 0,
+					max1: 89
 				},
 				Threshold: {
 					min: -540,
@@ -642,12 +644,12 @@ var remoteApp = {
 				LowQ: {
 					min: 0,
 					max: 44,
-					label: ['table']
+					label: ['table11']
 				},
 				LowF: {
 					min: 5,
 					max: 124,
-					label: ['table']
+					label: ['table12']
 				},
 				LowG: {
 					min: -180,
@@ -662,12 +664,12 @@ var remoteApp = {
 				LowMidQ: {
 					min: 0,
 					max: 40,
-					label: ['table']
+					label: ['table11']
 				},
 				LowMidF: {
 					min: 5,
 					max: 124,
-					label: ['table']
+					label: ['table12']
 				},
 				LowMidG: {
 					min: -180,
@@ -677,12 +679,12 @@ var remoteApp = {
 				HiMidQ: {
 					min: 0,
 					max: 40,
-					label: ['table']
+					label: ['table11']
 				},
 				HiMidF: {
 					min: 5,
 					max: 124,
-					label: ['table']
+					label: ['table12']
 				},
 				HiMidG: {
 					min: -180,
@@ -692,12 +694,12 @@ var remoteApp = {
 				HiQ: {
 					min: 0,
 					max: 43,
-					label: ['table']
+					label: ['table11']
 				},
 				HiF: {
 					min: 5,
 					max: 124,
-					label: ['table']
+					label: ['table12']
 				},
 				HiG: {
 					min: -180,
@@ -738,6 +740,13 @@ var remoteApp = {
 				}
 			},
 		},
+
+		table12:  ["16.0Hz", "17.0Hz", "18.0Hz", "19.0Hz", "20.0Hz", "21.2Hz", "22.4Hz", "23.6Hz", "25.0Hz", "26.5Hz", "28.0Hz", "30.0Hz", "31.5Hz", "33.5Hz", "35.5Hz", "37.5Hz", "40.0Hz", "42.5Hz", "45.0Hz", "47.5Hz", "50.0Hz", "53.0Hz", "56.0Hz", "60.0Hz", "63.0Hz", "67.0Hz", "71.0Hz", "75.0Hz", "80.0Hz", "85.0Hz", "90.0Hz", "95.0Hz", "100Hz", "106Hz", "112Hz", "118Hz", "125Hz", "132Hz", "140Hz", "150Hz", "160Hz", "170Hz", "180Hz", "190Hz", "200Hz", "212Hz", "224Hz", "236Hz", "250Hz", "265Hz", "280Hz", "300Hz", "315Hz", "335Hz", "355Hz", "375Hz", "400Hz", "425Hz", "450Hz", "475Hz", "500Hz", "530Hz", "560Hz", "600Hz", "630Hz", "670Hz", "710Hz", "750Hz", "800Hz", "850Hz", "900Hz", "950Hz", "1.00kHz", "1.06kHz", "1.12kHz", "1.18kHz", "1.25kHz", "1.32kHz", "1.40kHz", "1.50kHz", "1.60kHz", "1.70kHz", "1.80kHz", "1.90kHz", "2.00kHz", "2.12kHz", "2.24kHz", "2.36kHz", "2.50kHz", "2.65kHz", "2.80kHz", "3.00kHz", "3.15kHz", "3.35kHz", "3.55kHz", "3.75kHz", "4.00kHz", "4.25kHz", "4.50kHz", "4.75kHz", "5.00kHz", "5.30kHz", "5.60kHz", "6.00kHz", "6.30kHz", "6.70kHz", "7.10kHz", "7.50kHz", "8.00kHz", "8.50kHz", "9.00kHz", "9.50kHz", "10.0kHz", "10.6kHz", "11.2kHz", "11.8kHz", "12.5kHz", "13.2kHz", "14.0kHz", "15.0kHz", "16.0kHz", "17.0kHz", "18.0kHz", "19.0kHz", "20.0kHz", "21.2kHz", "22.4kHz", "23.6kHz"],
+		table11:  ["10.0", "9.0", "8.0", "7.0", "6.3", "5.6", "5.0", "4.5", "4.0", "3.5", "3.2", "2.8", "2.5", "2.2", "2.0", "1.8", "1.6", "1.4", "1.2", "1.1", "1.0", "0.90", "0.80", "0.70", "0.63", "0.56", "0.50", "0.45", "0.40", "0.35", "0.32", "0.28", "0.25", "0.22", "0.20", "0.18", "0.16", "0.14", "0.12", "0.11", "0.10", "Low Shelving", "High Shelving", "LPF", "HPF"],
+		table10:  ["HARD", "1", "2", "3", "4", "5"],
+		table08:  ["1 : 1",  "1.1 : 1",  "1.3 : 1",  "1.5 : 1",  "1.7 : 1",  "2 : 1",  "2.5 : 1",  "3 : 1",  "3.5 : 1",  "4 : 1",  "5 : 1",  "6 : 1",  "8 : 1",  "10 : 1",  "20 : 1",  "∞ : 1"],
+		table07:  ["5 ms", "11 ms", "16 ms", "21 ms", "27 ms", "32 ms", "37 ms", "43 ms", "48 ms", "53 ms", "59 ms", "64 ms", "69 ms", "75 ms", "80 ms", "85 ms", "91 ms", "96 ms", "101 ms", "107 ms", "112 ms", "117 ms", "123 ms", "128 ms", "133 ms", "139 ms", "144 ms", "149 ms", "155 ms", "160 ms", "165 ms", "171 ms", "176 ms", "187 ms", "197 ms", "208 ms", "219 ms", "229 ms", "240 ms", "251 ms", "261 ms", "272 ms", "283 ms", "293 ms", "304 ms", "315 ms", "325 ms", "336 ms", "347 ms", "368 ms", "389 ms", "411 ms", "432 ms", "453 ms", "475 ms", "496 ms", "517 ms", "539 ms", "560 ms", "581 ms", "603 ms", "624 ms", "645 ms", "667 ms", "688 ms", "730 ms", "773 ms", "816 ms", "858 ms", "901 ms", "944 ms", "986 ms", "1.02 s", "1.07 s", "1.11 s", "1.15 s", "1.20 s", "1.24 s", "1.28 s", "1.32 s", "1.37 s", "1.45 s", "1.54 s", "1.62 s", "1.71 s", "1.79 s", "1.88 s", "1.96 s", "2.05 s", "2.13 s", "2.22 s", "2.30 s", "2.39 s", "2.47 s", "2.56 s", "2.65 s", "2.73 s", "2.90 s", "3.07 s", "3.24 s", "3.41 s", "3.58 s", "3.75 s", "3.93 s", "4.10 s", "4.27 s", "4.44 s", "4.61 s", "4.78 s", "4.95 s", "5.12 s", "5.29 s", "5.46 s", "5.80 s", "6.14 s", "6.48 s", "6.83 s", "7.17 s", "7.51 s", "7.85 s", "8.19 s", "8.53 s", "8.87 s", "9.21 s", "9.56 s", "9.90 s", "10.2 s", "10.5 s", "10.9 s", "11.6 s", "12.2 s", "12.9 s", "13.6 s", "14.3 s", "15.0 s", "15.7 s", "16.3 s", "17.0 s", "17.7 s", "18.4 s", "19.1 s", "19.7 s", "20.4 s", "21.1 s", "21.8 s", "23.2 s", "24.5 s", "25.9 s", "27.3 s", "28.6 s", "30.0 s", "31.4 s", "32.7 s", "34.1 s", "35.4 s", "36.8 s", "38.2 s", "39.5 s", "40.9 s", "42.3 s"],
+		table06:  ["0.02 ms", "0.04 ms", "0.06 ms", "0.08 ms", "0.10 ms", "0.13 ms", "0.15 ms", "0.17 ms", "0.19 ms", "0.21 ms", "0.23 ms", "0.25 ms", "0.27 ms", "0.29 ms", "0.31 ms", "0.33 ms", "0.35 ms", "0.38 ms", "0.40 ms", "0.42 ms", "0.44 ms", "0.46 ms", "0.48 ms", "0.50 ms", "0.52 ms", "0.54 ms", "0.56 ms", "0.58 ms", "0.60 ms", "0.63 ms", "0.65 ms", "0.67 ms", "0.69 ms", "0.73 ms", "0.77 ms", "0.81 ms", "0.85 ms", "0.90 ms", "0.94 ms", "0.98 ms", "1.02 ms", "1.06 ms", "1.10 ms", "1.15 ms", "1.19 ms", "1.23 ms", "1.27 ms", "1.31 ms", "1.35 ms", "1.44 ms", "1.52 ms", "1.60 ms", "1.69 ms", "1.77 ms", "1.85 ms", "1.94 ms", "2.02 ms", "2.10 ms", "2.19 ms", "2.27 ms", "2.35 ms", "2.44 ms", "2.52 ms", "2.60 ms", "2.69 ms", "2.85 ms", "3.02 ms", "3.19 ms", "3.35 ms", "3.52 ms", "3.69 ms", "3.85 ms", "4.02 ms", "4.19 ms", "4.35 ms", "4.52 ms", "4.69 ms", "4.85 ms", "5.02 ms", "5.19 ms", "5.35 ms", "5.69 ms", "6.02 ms", "6.35 ms", "6.69 ms", "7.02 ms", "7.35 ms", "7.69 ms", "8.02 ms", "8.35 ms", "8.69 ms", "9.02 ms", "9.35 ms", "9.69 ms", "10.0 ms", "10.3 ms", "10.6 ms", "11.3 ms", "12.0 ms", "12.6 ms", "13.3 ms", "14.0 ms", "14.6 ms", "15.3 ms", "16.0 ms", "16.6 ms", "17.3 ms", "18.0 ms", "18.6 ms", "19.3 ms", "20.0 ms", "20.6 ms", "21.3 ms", "22.6 ms", "24.0 ms", "25.3 ms", "26.6 ms", "28.0 ms", "29.3 ms", "30.6 ms", "32.0 ms", "33.3 ms", "34.6 ms", "36.0 ms", "37.3 ms", "38.6 ms", "40.0 ms", "41.3 ms", "42.6 ms", "45.3 ms", "48.0 ms", "50.6 ms", "53.3 ms", "56.0 ms", "58.6 ms", "61.3 ms", "64.0 ms", "66.6 ms", "69.3 ms", "72.0 ms", "74.6 ms", "77.3 ms", "80.0 ms", "82.6 ms", "85.3 ms", "90.6 ms", "96.0 ms", "101 ms", "106 ms", "112 ms", "117 ms", "122 ms", "128 ms", "133 ms", "138 ms", "144 ms", "149 ms", "154 ms", "160 ms", "165 ms", "170 ms", "181 ms", "192 ms", "202 ms", "213 ms", "224 ms", "234 ms", "245 ms", "256 ms", "266 ms", "277 ms", "288 ms", "298 ms", "309 ms", "320 ms", "330 ms", "341 ms", "362 ms", "384 ms", "405 ms", "426 ms", "448 ms", "469 ms", "490 ms", "512 ms", "533 ms", "554 ms", "576 ms", "597 ms", "618 ms", "640 ms", "661 ms", "682 ms", "725 ms", "768 ms", "810 ms", "853 ms", "896 ms", "938 ms", "981 ms", "1.02 s", "1.06 s", "1.10 s", "1.15 s", "1.19 s", "1.23 s", "1.28 s", "1.32 s", "1.36 s", "1.45 s", "1.53 s", "1.62 s", "1.70 s", "1.79 s", "1.87 s", "1.96 s"],
 
         /**
          * persistent configuration that is stored on the server
@@ -1645,9 +1654,15 @@ var remoteApp = {
 			if (target == 'property') {
 				// compute and send new value
 				num = app.status.selectedFader;
-				newValue = app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min'] + Math.round(
-					(1 - newPositionPercent/app.config.maxHandlePercent) * (app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['max'] - app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min'])
-				);
+				if (app.status.effectFader == "Knee" && app.status.activeEffectTab == 'comp' && app.status.faderEffect['comp']['Type'][app.status.selectedFaderType + num] > 1) {
+					newValue = app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min1'] + Math.round(
+						(1 - newPositionPercent/app.config.maxHandlePercent) * (app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['max1'] - app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min1'])
+					);
+				} else {
+					newValue = app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min'] + Math.round(
+						(1 - newPositionPercent/app.config.maxHandlePercent) * (app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['max'] - app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min'])
+					);
+				}
 				app.status.faderEffect[app.status.activeEffectTab][app.status.effectFader][app.status.selectedFaderType + num] = newValue;
 				$handle.html(Math.round(100 - (newPositionPercent*100/app.config.maxHandlePercent)) + '%<br>' + newValue );
 
@@ -2138,8 +2153,14 @@ var remoteApp = {
 		$('.tabcontent[data-tab="effects"] .fader-select').eq(1).attr('data-id',app.status.selectedFaderType);
 		$('.tabcontent[data-tab="effects"] .fader-select').eq(1).html('&gt; ' + (num < upperLimit ? (1 + parseInt(num)) : '--') + ' &gt;');
 		$('.tabcontent[data-tab="effects"] #effect-label').html(app.status.effectFader);
-		$('.tabcontent[data-tab="effects"] #effect-min').html('Min: ' + app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min']);
-		$('.tabcontent[data-tab="effects"] #effect-max').html('Max: ' + app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['max']);
+		if (app.status.effectFader == "Knee" && app.status.activeEffectTab == 'comp' && app.status.faderEffect['comp']['Type'][id] > 1) {
+			$('.tabcontent[data-tab="effects"] #effect-min').html('Min: ' + app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min1']);
+			$('.tabcontent[data-tab="effects"] #effect-max').html('Max: ' + app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['max1']);
+		} else {
+			$('.tabcontent[data-tab="effects"] #effect-min').html('Min: ' + app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['min']);
+			$('.tabcontent[data-tab="effects"] #effect-max').html('Max: ' + app.config.propertyRange[app.status.activeEffectTab][app.status.effectFader]['max']);
+		}
+		
 
 		//app.sendControlMessage('syncEffect', app.status.selectedFaderType, num, 0, 0);
 
@@ -2184,7 +2205,7 @@ var remoteApp = {
 								} else {
 									$(target).removeClass('effect_button_selected_off')
 								}
-							}else {
+							} else {
 								if (property == "Pan") {
 									if (value == 0) {
 										value = "CENTER"
@@ -2193,8 +2214,19 @@ var remoteApp = {
 									} else {
 										value = "R " + value
 									}
+								} else if (property == "Gain" && x == 'comp' && app.status.faderEffect['comp']['Type'][id] > 1) {
+									value = -180 + value;
 								}
-								$(target).html(property + '<br>' + value + ' ' + app.config.propertyRange[x][property]['label']);
+								if (app.config.propertyRange[x][property]['label'][0].substring(0,5) != 'table') {
+									$(target).html(property + '<br>' + value + ' ' + app.config.propertyRange[x][property]['label']);
+								} else if (property == "Knee" && x == 'comp' && app.status.faderEffect['comp']['Type'][id] > 1) {
+									console.log('mk-Knee')
+									$(target).html(property + '<br>' + (value + 1) +  ' dB' );
+								} else {
+									if (property == "Knee" && x == 'comp' && app.status.faderEffect['comp']['Type'][id] < 2 && value >5) {value = 5}
+									$(target).html(property + '<br>' + app.config[app.config.propertyRange[x][property]['label'][0]][value]);
+								}
+								
 							}
 						}
 					}
@@ -2269,7 +2301,12 @@ var remoteApp = {
 		
 		// update fader position if fader is not being moved
 		if((update.fader || update.faderPan) && !app.status.movedFaders[id]) {
-			if (prop != '') {
+			if (prop == "Knee" && effect == 'comp' && app.status.faderEffect['comp']['Type'][app.status.selectedFaderType + num] > 1) {
+				faderPercent = (1 - (app.status.faderEffect[effect][prop][app.status.selectedFaderType + num] - app.config.propertyRange[effect][prop]['min1'])/(app.config.propertyRange[effect][prop]['max1'] - app.config.propertyRange[effect][prop]['min1'])) * app.config.maxHandlePercent;
+				$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.faderEffect[effect][prop][app.status.selectedFaderType + num]);
+			} else if (prop != '') {
+				console.log('mk- ' + id + ' -- ' + app.status.fader[id])
+				if(prop == "Knee" && effect == 'comp' && app.status.faderEffect['comp']['Type'][app.status.selectedFaderType + num] < 2 && app.status.fader[id] > 5 ) {console.log('mk-hier'); app.status.faderEffect[effect][prop][app.status.selectedFaderType + num] = 5};
 				faderPercent = (1 - (app.status.faderEffect[effect][prop][app.status.selectedFaderType + num] - app.config.propertyRange[effect][prop]['min'])/(app.config.propertyRange[effect][prop]['max'] - app.config.propertyRange[effect][prop]['min'])) * app.config.maxHandlePercent;
 				$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.faderEffect[effect][prop][app.status.selectedFaderType + num]);
 			} else {
