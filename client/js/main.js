@@ -1858,12 +1858,15 @@ var remoteApp = {
 				effect = app.status.activeEffectTab,
 				target = app.status.selectedFaderType;
 
-			//console.log('send: effect: ' + effect + ' property: ' + property + ' num: ' + num + ' type: ' + type)
+			//console.log('send: effect: ' + effect + ' property: ' + property + ' num: ' + num + ' type: ' + type + ' target: ' + target)
 			
+			if (target == "auxsend") {
+				target = "channel"
+			}
 			// toggle channel on-status
 			if (property != '') {
 				if(property == 'On'){
-					newValue = !app.status.faderEffect[effect][property][app.status.selectedFaderType + num];
+					newValue = !app.status.faderEffect[effect][property][target + num];
 					if(newValue) {
 						$control.parent().removeClass('control-disabled');
 						newValue = 1;
@@ -1872,18 +1875,18 @@ var remoteApp = {
 						$control.parent().addClass('control-disabled');
 						newValue = 0;
 					}
-					app.status.faderEffect[effect][property][app.status.selectedFaderType + num] = newValue;	
+					app.status.faderEffect[effect][property][target + num] = newValue;	
 
 				}else if(app.config.effectPropertiesSwitch.includes(property) ) {
-					newValue = app.status.faderEffect[effect][property][app.status.selectedFaderType + num] + 1;
+					newValue = app.status.faderEffect[effect][property][target + num] + 1;
 					if (newValue > app.config.propertyRange[effect][property]['max']) {
 						newValue = app.config.propertyRange[effect][property]['min']
 					}
-					app.status.faderEffect[effect][property][app.status.selectedFaderType + num] = newValue;
+					app.status.faderEffect[effect][property][target + num] = newValue;
 
 				}else {
 					app.status.effectFader = property;
-					newValue = app.status.faderEffect[effect][property][app.status.selectedFaderType + num];
+					newValue = app.status.faderEffect[effect][property][target + num];
 				}
 				app.sendControlMessage(
 					type,
@@ -2122,6 +2125,10 @@ var remoteApp = {
 		id = app.status.selectedFaderType + num
 		value = 0,
 		property = '';
+
+		if (app.status.selectedFaderType == "auxsend") {
+			id = "channel" + num
+		}
 		
 		app.status.on['solo1'] = app.status.on[id];
 		app.status.fader['solo1'] = app.status.fader[id];
@@ -2220,7 +2227,6 @@ var remoteApp = {
 								if (app.config.propertyRange[x][property]['label'][0].substring(0,5) != 'table') {
 									$(target).html(property + '<br>' + value + ' ' + app.config.propertyRange[x][property]['label']);
 								} else if (property == "Knee" && x == 'comp' && app.status.faderEffect['comp']['Type'][id] > 1) {
-									console.log('mk-Knee')
 									$(target).html(property + '<br>' + (value + 1) +  ' dB' );
 								} else {
 									if (property == "Knee" && x == 'comp' && app.status.faderEffect['comp']['Type'][id] < 2 && value >5) {value = 5}
@@ -2301,14 +2307,15 @@ var remoteApp = {
 		
 		// update fader position if fader is not being moved
 		if((update.fader || update.faderPan) && !app.status.movedFaders[id]) {
-			if (prop == "Knee" && effect == 'comp' && app.status.faderEffect['comp']['Type'][app.status.selectedFaderType + num] > 1) {
-				faderPercent = (1 - (app.status.faderEffect[effect][prop][app.status.selectedFaderType + num] - app.config.propertyRange[effect][prop]['min1'])/(app.config.propertyRange[effect][prop]['max1'] - app.config.propertyRange[effect][prop]['min1'])) * app.config.maxHandlePercent;
-				$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.faderEffect[effect][prop][app.status.selectedFaderType + num]);
+			if (prop == "Knee" && effect == 'comp' && app.status.faderEffect['comp']['Type'][target + num] > 1) {
+				faderPercent = (1 - (app.status.faderEffect[effect][prop][target + num] - app.config.propertyRange[effect][prop]['min1'])/(app.config.propertyRange[effect][prop]['max1'] - app.config.propertyRange[effect][prop]['min1'])) * app.config.maxHandlePercent;
+				$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.faderEffect[effect][prop][target + num]);
 			} else if (prop != '') {
-				console.log('mk- ' + id + ' -- ' + app.status.fader[id])
-				if(prop == "Knee" && effect == 'comp' && app.status.faderEffect['comp']['Type'][app.status.selectedFaderType + num] < 2 && app.status.fader[id] > 5 ) {console.log('mk-hier'); app.status.faderEffect[effect][prop][app.status.selectedFaderType + num] = 5};
-				faderPercent = (1 - (app.status.faderEffect[effect][prop][app.status.selectedFaderType + num] - app.config.propertyRange[effect][prop]['min'])/(app.config.propertyRange[effect][prop]['max'] - app.config.propertyRange[effect][prop]['min'])) * app.config.maxHandlePercent;
-				$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.faderEffect[effect][prop][app.status.selectedFaderType + num]);
+				if(prop == "Knee" && effect == 'comp' && app.status.faderEffect['comp']['Type'][target + num] < 2 && app.status.fader[id] > 5 ) {
+					app.status.faderEffect[effect][prop][target + num] = 5
+				};
+				faderPercent = (1 - (app.status.faderEffect[effect][prop][target + num] - app.config.propertyRange[effect][prop]['min'])/(app.config.propertyRange[effect][prop]['max'] - app.config.propertyRange[effect][prop]['min'])) * app.config.maxHandlePercent;
+				$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.faderEffect[effect][prop][target + num]);
 			} else {
 				faderPercent = (1 - app.status.fader[id]/app.config.maxFaderValue) * app.config.maxHandlePercent;	
 				$control.find('.fader-handle').html(Math.round(100 - (faderPercent*100/app.config.maxHandlePercent)) + '%<br>' + app.status.calcFaderDB(app.status.fader[id], target) + 'dB');
