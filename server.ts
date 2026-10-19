@@ -1,8 +1,11 @@
+import * as fs from "node:fs";
+import type { Application } from "./server/types";
+
 console.log('\n\n=== 01v96 Remote server by Michael Strobel ===\n\n');
 
 // global application object and base configuration
 
-var app = {
+const app: Application = {
     config: {
         staticPort: 1337,
         webSocketPort: 1338
@@ -21,8 +24,8 @@ var app = {
 
 // load controllers
 
-require('fs').readdirSync(__dirname + '/server/controllers').forEach(function(file) {
-    var controller;
+fs.readdirSync(__dirname + '/server/controllers').forEach(function(file) {
+    let controller;
 
     if(file.match(/\.js$/) !== null) {
         controller = file.replace(/\.js$/, '');

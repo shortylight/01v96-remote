@@ -1,23 +1,19 @@
 ﻿const midi = require('@julusian/midi')
 
-var input = new midi.Input(),
-    output = new midi.Output(),
+const input = new midi.Input();
+const output = new midi.Output();
+let listener: ((message: number[]) => void) | false = false;
+const inputPortCount = input.getPortCount();
+const outputPortCount = output.getPortCount();
+let foundInputPort = false;
+let foundOutputPort = false;
+let i;
 
-    listener = false,
-
-    inputPortCount = input.getPortCount(),
-    outputPortCount = output.getPortCount(),
-
-    foundInputPort = false,
-    foundOutputPort = false,
-
-    i;
-
-var matchPortName = function(name) {
+const matchPortName = function(name: string) {
     return (name.toLowerCase().indexOf('01v96') !== -1 || name.match(/01V96 ..:0/i));
 };
 
-var transmitMessage = function(deltaTime, message) {
+const transmitMessage = function(deltaTime: number, message: number[]) {
     if(listener) {
         listener(message);
     }
@@ -69,13 +65,15 @@ if(!foundOutputPort) {
 }
 
 
+export {};
+
 module.exports = {
     
-    setListener: function(l) {
+    setListener: function(l: (message: number[]) => void) {
         listener = l;
     },
     
-    send: function(message) {
+    send: function(message: number[]) {
         if(foundOutputPort) {
             output.sendMessage(message);
         }

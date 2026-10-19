@@ -1,6 +1,6 @@
-var listener = false;
+let listener: ((message: number[]) => void) | false = false;
 
-var transmitMessage = function(message) {
+const transmitMessage = function(message: number[]) {
     if(listener) {
         listener(message);
     }
@@ -14,8 +14,8 @@ setInterval(function() {
 
 // send random meter levels for channel
 setInterval(function() {
-	var message = [240,67,16,62,13,33,0,0,0],
-		i;
+	const message = [240,67,16,62,13,33,0,0,0];
+	let i;
 	
 	for(i=0; i<=31; i++) {
 		message.push(Math.round(Math.random()*32),0);
@@ -28,8 +28,8 @@ setInterval(function() {
 
 // send random meter levels for bus
 setInterval(function() {
-	var message = [240,67,16,62,13,33,1,0,0],
-		i;
+	const message = [240,67,16,62,13,33,1,0,0];
+	let i;
 	
 	for(i=0; i<=7; i++) {
 		message.push(Math.round(Math.random()*32),0);
@@ -42,8 +42,8 @@ setInterval(function() {
 
 // send random meter levels for aux
 setInterval(function() {
-	var message = [240,67,16,62,13,33,2,0,0],
-		i;
+	const message = [240,67,16,62,13,33,2,0,0];
+	let i;
 	
 	for(i=0; i<=7; i++) {
 		message.push(Math.round(Math.random()*32),0);
@@ -56,8 +56,8 @@ setInterval(function() {
 
 // send random meter levels for stereo
 setInterval(function() {
-	var message = [240,67,16,62,13,33,3,0,0],
-		i;
+	const message = [240,67,16,62,13,33,3,0,0];
+	let i;
 	
 	for(i=0; i<=1; i++) {
 		message.push(Math.round(Math.random()*32),0);
@@ -68,13 +68,15 @@ setInterval(function() {
     transmitMessage(message);
 }, 50);
 
+export {};
+
 module.exports = {
 
-    setListener: function(l) {
+    setListener: function(l: (message: number[]) => void) {
         listener = l;
     },
 
-    send: function(message) {
+    send: function(_message: number[]) {
         // do nothing
     }
 

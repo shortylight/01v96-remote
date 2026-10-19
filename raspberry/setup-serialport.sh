@@ -82,7 +82,7 @@ echo '#!/bin/bash
 
 NAME="Forever NodeJS"
 EXE=/opt/node/bin/forever
-SCRIPT=/home/pi/01v96-remote/server.js
+SCRIPT=/home/pi/01v96-remote/dist/server.js
 PARAMS=serialport
 USER=pi
 OUT=/var/log/01v96-remote/forever.log

@@ -1,11 +1,15 @@
-var fs = require('fs'),
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type { Application } from "../types";
 
-    app;
+let app: Application;
+
+const configPath = path.resolve(__dirname, '../../../config/client.js');
 
 
-var init = function() {
+const init = function() {
 
-    fs.readFile(__dirname + '/../../config/client.js', function(err, data) {
+    fs.readFile(configPath, function(err, data) {
         if(err) {
             console.log('[config] config/client.js does not yet exist');
             return;
@@ -14,8 +18,7 @@ var init = function() {
         console.log('[config] Loading config/client.js');
 
         try {
-            data = JSON.parse(data);
-            app.clientConfig = data;
+            app.clientConfig = JSON.parse(data.toString());
         }
         catch(e) {
             console.log(e);
@@ -28,7 +31,7 @@ var init = function() {
 
 };
 
-var socketListener = function(message, socket) {
+const socketListener = function(message: any, socket: any) {
 
     // request configuration
 
@@ -52,7 +55,7 @@ var socketListener = function(message, socket) {
         });
 
         fs.writeFile(
-            __dirname + '/../../config/client.js',
+            configPath,
             JSON.stringify(app.clientConfig),
             function(err) {
                 if(err) {
@@ -65,7 +68,7 @@ var socketListener = function(message, socket) {
 };
 
 
-module.exports = function(globalApp) {
+module.exports = function(globalApp: Application) {
     app = globalApp;
     app.events.on('ready', init);
 };

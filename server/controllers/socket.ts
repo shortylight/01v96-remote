@@ -1,31 +1,29 @@
-var http = require('http'),
-    websocket = require('ws'),
+import type { Application } from "../types";
 
-    app,
+const websocket = require('ws');
+let app: Application;
+const connections: any[] = [];
+const listeners: Array<(message: any, socket: any) => void> = [];
 
-    connections = [],
-    listeners = [];
-
-
-function parseJson(message) {
+function parseJson(message: string | Buffer) {
     try {
-        return JSON.parse(message);
+        return JSON.parse(message.toString());
     }
     catch(e) {
-        console.log('[socket] Invalid JSON message received:', message.utf8Data);
+        console.log('[socket] Invalid JSON message received:', message);
         console.log(e);
         return undefined;
     }
 }
 
-var init = function() {
+const init = function() {
 
     // create web socket server
-    var wsServer = new websocket.Server({
+    const wsServer = new websocket.Server({
         port: app.config.webSocketPort
     });
 
-    wsServer.on('connection', function(connection) {
+    wsServer.on('connection', function(connection: any) {
 
         connections.push(connection);
 
@@ -34,9 +32,9 @@ var init = function() {
 
         // message handling
 
-        connection.on('message', function(message) {
-            var i = listeners.length,
-                obj = parseJson(message);
+        connection.on('message', function(message: string | Buffer) {
+            let i = listeners.length;
+            const obj = parseJson(message);
 
             if(obj === undefined) return;
 
@@ -51,7 +49,7 @@ var init = function() {
         connection.on('close', function() {
             console.log('[socket] Closed connection');
 
-            var index = connections.indexOf(connection);
+            const index = connections.indexOf(connection);
 
             if(index !== -1) {
                 connections.splice(index,1);
@@ -64,8 +62,8 @@ var init = function() {
 
 };
 
-var send = function(socket, message) {
-    var content = message;
+const send = function(socket: any, message: any) {
+    let content = message;
 
     if(typeof(message) !== 'string') {
         content = JSON.stringify(message);
@@ -73,7 +71,7 @@ var send = function(socket, message) {
 
     try {
         socket.send(content);
-    } catch(e) {
+    } catch {
         // do nothing
     }
 };
@@ -82,8 +80,8 @@ var send = function(socket, message) {
  * Broadcast message to all connected clients
  * @param {string | object} message Objects are converted to JSON string
  */
-var broadcast = function(message) {
-    var i = connections.length,
+const broadcast = function(message: any) {
+    let i = connections.length,
         content = message;
 
     if(typeof(message) !== 'string') {
@@ -93,7 +91,7 @@ var broadcast = function(message) {
     while(i--) {
         try {
             connections[i].send(content);
-        } catch(e) {
+        } catch {
             // do nothing
         }
     }
@@ -104,8 +102,8 @@ var broadcast = function(message) {
  * @param socket has to be contained in the connections array
  * @param {string | object} message Objects are converted to JSON string
  */
-var broadcastToOthers = function(socket, message) {
-    var i = connections.length,
+const broadcastToOthers = function(socket: any, message: any) {
+    let i = connections.length,
         content = message;
 
     if(typeof(message) !== 'string') {
@@ -116,7 +114,7 @@ var broadcastToOthers = function(socket, message) {
         if(connections[i] !== socket) {
             try {
                 connections[i].send(content);
-            } catch(e) {
+            } catch {
                 // do nothing
             }
         }
@@ -127,13 +125,15 @@ var broadcastToOthers = function(socket, message) {
  * Add WebSocket message listener
  * @param listener
  */
-var addListener = function(listener) {
+const addListener = function(listener: (message: any, socket: any) => void) {
     listeners.push(listener);
 };
 
 
 
-module.exports = function(globalApp) {
+export {};
+
+module.exports = function(globalApp: Application) {
 
     app = globalApp;
 

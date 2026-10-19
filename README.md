@@ -75,11 +75,13 @@ The documentation for the installation on a Raspberry Pi can be found in the fil
 
 Start the server from the command line:
 
-	node server.js
+	npm start
 
 or
 
     npm run start
+
+To pass a mixer connection mode, add it after `--`, for example `npm start -- dummy`.
 
 From Windows you can start it with the *01v96-remote-server.bat* file.
 
@@ -98,6 +100,8 @@ The web client can be accessed at port 1337. You have to use a browser that supp
 
 
 ## Development
+
+The server is written in TypeScript. `npm start` compiles it to `dist/` before launch; run `npm run lint` to check the server sources. Raspberry Pi init scripts run the compiled entry point directly, so run `npm run build` after installing dependencies and whenever server code changes.
 
 ### WebSocket protocol
 

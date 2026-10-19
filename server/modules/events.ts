@@ -1,16 +1,15 @@
-var util = require('util'),
-    firedEvents = [],
-    listeners = [];
+const firedEvents: string[] = [];
+const listeners: Array<[string[], () => void]> = [];
 
 /**
  * Determines if all events of a given set have already been fired
  * @param {array | string} events necessary events, in string form separated by blanks
  * @returns {boolean}
  */
-var is = function(events) {
-    var i;
+const is = function(events: string | string[]) {
+    let i;
 
-    if(!util.isArray(events)) {
+    if(!Array.isArray(events)) {
         events = events.split(' ');
     }
 
@@ -31,9 +30,9 @@ var is = function(events) {
  *          in string form separated by blanks
  * @param {function} listener
  */
-var on = function(events, listener) {
+const on = function(events: string | string[], listener: () => void) {
 
-    if(!util.isArray(events)) {
+    if(!Array.isArray(events)) {
         events = events.split(' ');
     }
 
@@ -55,8 +54,8 @@ var on = function(events, listener) {
  * fire event and immediately execute all attached listeners
  * @param {string} event
  */
-var fire = function(event) {
-    var i = listeners.length;
+const fire = function(event: string) {
+    let i = listeners.length;
 
     console.log('[events] Fired: ' + event);
 
@@ -74,6 +73,8 @@ var fire = function(event) {
     }
 };
 
+
+export {};
 
 module.exports = {
     is: is,

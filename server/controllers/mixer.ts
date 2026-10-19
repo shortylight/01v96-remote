@@ -1,9 +1,49 @@
-var app,
+import type { Application } from "../types";
 
-    device,
+interface MixerDevice {
+    setListener(listener: (message: number[]) => void): void;
+    send(message: number[]): void;
+}
+
+interface MixerStatus {
+    on: Record<string, boolean>;
+    fader: Record<string, number>;
+    faderName: Record<string, string>;
+    faderEffect: Record<string, Record<string, Record<string, number | boolean>>>;
+    faderPair: Record<string, number>;
+}
+
+interface MixerConfig {
+    channelCount: number;
+    auxCount: number;
+    auxSendCount: number;
+    busCount: number;
+    faderThreshold: number;
+    sysExStart: number[];
+    sysExStartSpecific: number[];
+    parameterChange(arr: number[], deviceSpecific?: boolean): number[];
+    parameterRequest(arr: number[], deviceSpecific?: boolean): number[];
+    sysExElements: Record<string, any>;
+    auxSendParam(aux: number): number;
+    value2Data(value: number): number[];
+    data2Value(data: number[]): number;
+    on2Data(on: boolean): number[];
+    data2On(data: number[]): boolean;
+    remoteMeterRequest: number[];
+    remoteFaderNameRequest: number[];
+    remoteBusNameRequest: number[];
+    remoteAuxNameRequest: number[];
+    remoteSumNameRequest: number[];
+    remoteMeterInterval: number;
+    remoteNameInterval: number;
+}
+
+let app: Application,
+
+    device: MixerDevice,
 
     // cache object for larger MIDI transmissions
-    messageCache = false,
+    messageCache: number[] | false = false,
 
     // runtime counter for config.remoteMeterInterval
     meterFilterCount = 0,
@@ -12,7 +52,7 @@ var app,
     faderNameCache = '';
 
 
-var init = function () {
+const init = function () {
 
     switch (process.argv[2]) {
 
@@ -67,7 +107,7 @@ var init = function () {
 /**
  * device-specific configuration
  */
-var config = {
+const config: MixerConfig = {
 
     channelCount: 32,
     auxCount: 8,
@@ -82,7 +122,7 @@ var config = {
                 16,     // MIDI channel 0,
                 62,
                 127,
-                01],	//
+                1],	//
 
     sysExStartSpecific: [240, 
                         67, 
@@ -91,11 +131,11 @@ var config = {
                         13],		//
 
     // sysEx parameter change and parameter request
-    parameterChange: function (arr, deviceSpecific) {
+    parameterChange: function (arr: number[], deviceSpecific = false) {
         return [240, 67, 16, 62, (deviceSpecific ? 13 : 127), 1].concat(arr, [247]); // Änderung für spezific
     },
 
-    parameterRequest: function (arr, deviceSpecific) {
+    parameterRequest: function (arr: number[], deviceSpecific = false) {
         return [240, 67, 48, 62, (deviceSpecific ? 13 : 127), 1].concat(arr, [247]);
     },
 
@@ -157,14 +197,14 @@ var config = {
 
 
     // aux send: 8th byte is used for aux determination
-    auxSendParam: function (aux) {
+    auxSendParam: function (aux: number) {
         return 3 * aux - 1;
     },
 
     // 10bit fader values are transmitted in 4 bytes
     // 00000000 00000000 00000nnn 0nnnnnnn
-    value2Data: function (value) {
-        var fill = 0;
+    value2Data: function (value: number) {
+        let fill = 0;
         if (value < 0) {
             value = 2097152 + value;
             fill = 127;
@@ -172,8 +212,8 @@ var config = {
         return [fill, value >> 14, (value >> 7)& 0x7F, value & 0x7F];
     },
 
-    data2Value: function (data) {
-        value = (data[1] << 14) + (data[2] << 7) + data[3];
+    data2Value: function (data: number[]) {
+        const value = (data[1] << 14) + (data[2] << 7) + data[3];
         if (data[0] == 127) { // test negative
             return (2097152 - value) * (-1);
         } else {
@@ -182,11 +222,11 @@ var config = {
     },
 
     // channel on values: last byte 1/0
-    on2Data: function (on) {
+    on2Data: function (on: boolean) {
         return [0, 0, 0, on ? 1 : 0];
     },
 
-    data2On: function (data) {
+    data2On: function (data: number[]) {
         return !!data[3]; // type cast to boolean
     },
 
@@ -273,7 +313,7 @@ var config = {
 };
 
 
-var status = {
+const status: MixerStatus = {
 
     on: {
         sum0: false,
@@ -470,8 +510,8 @@ var status = {
 /**
  * Fills status object with zero-values
  */
-var fillStatus = function () {
-    var i, j;
+const fillStatus = function () {
+    let i, j, x;
 
     // channels
 
@@ -534,13 +574,13 @@ var fillStatus = function () {
 /**
  * dispatch MIDI messages and execute server callback
  */
-var deviceMessageHandler = function (message) {
-    var outMessage = false,
-        num, num2, value, i,
+const deviceMessageHandler = function (message: number[]) {
+    let outMessage: Record<string, any> | false = false,
+        num, num2, value, i, property;
 
-        messageBeginsWith = function (search) {
-            var length = search.length,
-                i;
+    const messageBeginsWith = function (search: number[]) {
+            const length = search.length;
+            let i;
 
             if (message.length < search.length) {
                 return false;
@@ -553,11 +593,11 @@ var deviceMessageHandler = function (message) {
             }
 
             return true;
-        },
-
-        aboveThreshold = function (val1, val2) {
-            return (Math.abs(val1 - val2) >= config.faderThreshold);
         };
+
+    const aboveThreshold = function (val1: number, val2: number) {
+        return (Math.abs(val1 - val2) >= config.faderThreshold);
+    };
 
     // concatenate messages that are longer than the 1024 byte limit
     if (message[0] == 240 && message.length == 1024) {
@@ -569,7 +609,7 @@ var deviceMessageHandler = function (message) {
         messageCache = false;
     }
     else if (messageCache && message.length == 1024) {
-        messageCache.concat(message);
+        messageCache = messageCache.concat(message);
         return;
     }
     else {
@@ -1141,7 +1181,7 @@ var deviceMessageHandler = function (message) {
             sendSyncRequest();
             return;
         // fader names
-        }else if (message[5] == 02 && message[6] == 04) {
+        }else if (message[5] == 2 && message[6] == 4) {
             faderNameCache += String.fromCharCode(message[12]) || ' ';
             if (message[7] - 4 == 15) {
                 outMessage = {
@@ -1154,7 +1194,7 @@ var deviceMessageHandler = function (message) {
                 status.faderName['channel' + outMessage.num] = outMessage.value;
             }
         // BUS fader names    
-        } else if (message[5] == 02 && message[6] == 15) {
+        } else if (message[5] == 2 && message[6] == 15) {
             faderNameCache += String.fromCharCode(message[12]) || ' ';
             if (message[7] - 4 == 15) {
                 outMessage = {
@@ -1167,7 +1207,7 @@ var deviceMessageHandler = function (message) {
                 status.faderName['bus' + outMessage.num] = outMessage.value;
             }
         // AUX fader names    
-        } else if (message[5] == 02 && message[6] == 16) {
+        } else if (message[5] == 2 && message[6] == 16) {
             faderNameCache += String.fromCharCode(message[12]) || ' ';
             if (message[7] - 4 == 15) {
                 outMessage = {
@@ -1180,7 +1220,7 @@ var deviceMessageHandler = function (message) {
                 status.faderName['aux' + outMessage.num] = outMessage.value;
             }
         // SUM fader names    
-        } else if (message[5] == 02 && message[6] == 18) {
+        } else if (message[5] == 2 && message[6] == 18) {
             faderNameCache += String.fromCharCode(message[12]) || ' ';
             if (message[7] - 4 == 15) {
                 outMessage = {
@@ -1249,8 +1289,8 @@ var deviceMessageHandler = function (message) {
  *		}
  * @param socket Client connection
  */
-var clientMessageHandler = function (message, socket) {
-    var i, j, groupId, pairNum, pairAux;
+const clientMessageHandler = function (message: any, socket: any) {
+    let i, j, groupId, pairNum, pairAux;
 
     // convert auxsend on to channel on
     if (message.type === 'on' && message.target === 'auxsend') {
@@ -1324,7 +1364,7 @@ var clientMessageHandler = function (message, socket) {
                     } else if (message.prop == "Phase") {
                         setFaderEffect(config.sysExElements.channelPhase, 0, message.num, message.value);
                     } else {
-                        setFaderEffect(config.sysExElements.channelRouting, parseInt(Object.keys(status.faderEffect[message.effect]).indexOf(message.prop) - 2), message.num, message.value);
+                        setFaderEffect(config.sysExElements.channelRouting, Number(Object.keys(status.faderEffect[message.effect]).indexOf(message.prop) - 2), message.num, message.value);
                     } 
                 } else {
                     setFaderEffect(config.sysExElements.channelEffect[message.effect], Object.keys(status.faderEffect[message.effect]).indexOf(message.prop), message.num, message.value);
@@ -1398,6 +1438,7 @@ var clientMessageHandler = function (message, socket) {
                 });
                 // pairing of channels in paired aux tabs
                 if(message.target === 'auxsend'){
+                    pairAux = message.num2 % 2 ? 1 : -1;
                     if (message.num % 2){
                         pairNum = parseInt(message.num) + 1;
                     } else {
@@ -1460,7 +1501,7 @@ var clientMessageHandler = function (message, socket) {
  * message send functions
  */
 
-var setChannelFader = function (channel, value) {
+const setChannelFader = function (channel: number, value: number) {
     if (channel < 1 || channel > config.channelCount) {
         console.log('[mixer] Invalid channel number ' + channel + ' (fader)');
         return;
@@ -1475,7 +1516,7 @@ var setChannelFader = function (channel, value) {
     status.fader['channel' + channel] = value;
 };
 
-var setChannelOn = function (channel, on) {
+const setChannelOn = function (channel: number, on: boolean) {
     if (channel < 1 || channel > config.channelCount) {
         console.log('[mixer] Invalid channel number ' + channel + ' (on)');
         return;
@@ -1491,7 +1532,7 @@ var setChannelOn = function (channel, on) {
 };
 
 //  set parameter for property [Gate, Comp, EQ, Delay, Pair] of channel 
-var setFaderEffect = function (effect, property, channel, parameter) {
+const setFaderEffect = function (effect: number, property: number, channel: number, parameter: number) {
     if (channel < 1 || channel > config.channelCount) {
         console.log('[mixer] Invalid channel number ' + channel + ' (on)');
         return;
@@ -1506,7 +1547,8 @@ var setFaderEffect = function (effect, property, channel, parameter) {
 };
 
 //  set names for channel, aux, bus, sum 
-var setName = function (property, number, name) {
+const setName = function (property: string, number: number, name: string) {
+    let i;
     for (i=0; i < name.length; i++) {
         if ( property == 'channel') {
             device.send([0xF0,0x43,0x10,0x3E,0x0D,0x02,0x04].concat(i + 4).concat(number - 1).concat(config.value2Data(name.charCodeAt(i)),[247]))
@@ -1522,7 +1564,7 @@ var setName = function (property, number, name) {
     }
 };
 
-var setSumFader = function (value) {
+const setSumFader = function (value: number) {
     device.send(
         config.parameterChange(
             [config.sysExElements.sumFader, 0, 0].concat(config.value2Data(value))
@@ -1532,7 +1574,7 @@ var setSumFader = function (value) {
     status.fader['sum0'] = value;
 };
 
-var setSumOn = function (on) {
+const setSumOn = function (on: boolean) {
     device.send(
         config.parameterChange(
             [config.sysExElements.sumOn, 0, 0].concat(config.on2Data(on))
@@ -1542,7 +1584,7 @@ var setSumOn = function (on) {
     status.on['sum0'] = on;
 };
 
-var setAuxSendFader = function (aux, channel, value) {
+const setAuxSendFader = function (aux: number, channel: number, value: number) {
     if (aux < 1 || aux > config.auxSendCount) {
         console.log('[mixer] Invalid aux send number ' + aux);
         return;
@@ -1562,7 +1604,7 @@ var setAuxSendFader = function (aux, channel, value) {
     status.fader['auxsend' + aux + channel] = value;
 };
 
-var setAuxFader = function (aux, value) {
+const setAuxFader = function (aux: number, value: number) {
     if (aux < 1 || aux > config.auxCount) {
         console.log('[mixer] Invalid aux number ' + aux + ' (fader)');
         return;
@@ -1577,7 +1619,7 @@ var setAuxFader = function (aux, value) {
     status.fader['aux' + aux] = value;
 };
 
-var setAuxOn = function (aux, on) {
+const setAuxOn = function (aux: number, on: boolean) {
     if (aux < 1 || aux > config.auxCount) {
         console.log('[mixer] Invalid aux number ' + aux + ' (on)');
         return;
@@ -1592,7 +1634,7 @@ var setAuxOn = function (aux, on) {
     status.on['aux' + aux] = on;
 };
 
-var setBusFader = function (bus, value) {
+const setBusFader = function (bus: number, value: number) {
     if (bus < 1 || bus > config.busCount) {
         console.log('[mixer] Invalid bus number ' + bus + ' (fader)');
         return;
@@ -1607,7 +1649,7 @@ var setBusFader = function (bus, value) {
     status.fader['bus' + bus] = value;
 };
 
-var setBusOn = function (bus, on) {
+const setBusOn = function (bus: number, on: boolean) {
     if (bus < 1 || bus > config.busCount) {
         console.log('[mixer] Invalid bus number ' + bus + ' (on)');
         return;
@@ -1626,7 +1668,8 @@ var setBusOn = function (bus, on) {
  * Parameter requests
  */
 
-var sendRemoteMeterRequest = function () {
+const sendRemoteMeterRequest = function () {
+    let i;
     // effect meter request
     config.remoteMeterRequest[7] = 0;
     // iterate through channel, aux, bus
@@ -1641,7 +1684,7 @@ var sendRemoteMeterRequest = function () {
     config.remoteMeterRequest[6] = 0;
 };
 
-var sendFaderNameRequest = function () {
+const sendFaderNameRequest = function () {
     while (true) {
         device.send(config.remoteFaderNameRequest);
             // character count
@@ -1660,7 +1703,7 @@ var sendFaderNameRequest = function () {
     
 };
 
-var sendAuxNameRequest = function () {
+const sendAuxNameRequest = function () {
     while (true) {
         device.send(config.remoteAuxNameRequest);
 
@@ -1679,7 +1722,7 @@ var sendAuxNameRequest = function () {
     }
 };
 
-var sendBusNameRequest = function () {
+const sendBusNameRequest = function () {
     while (true) {
         device.send(config.remoteBusNameRequest);
 
@@ -1698,7 +1741,7 @@ var sendBusNameRequest = function () {
     }
 };
 
-var sendSumNameRequest = function () {
+const sendSumNameRequest = function () {
     while (true) {
         device.send(config.remoteSumNameRequest);
 
@@ -1717,7 +1760,8 @@ var sendSumNameRequest = function () {
     }
 };
 
-var sendCannelEffectRequest = function (channel, type) {
+const sendCannelEffectRequest = function (channel: number, type: string) {
+    let x, j;
 
     // channelEffect: request for all parameters of a channel
     if (type == 'channel') {
@@ -1761,10 +1805,10 @@ var sendCannelEffectRequest = function (channel, type) {
     
 };
 
-var sendSyncRequest = function () {
-    var i, j, limit, auxSendParam;
+const sendSyncRequest = function () {
+    let i, j, limit, auxSendParam;
     for (i in config.sysExElements) {
-        if (config.sysExElements.hasOwnProperty(i)) {
+        if (Object.prototype.hasOwnProperty.call(config.sysExElements, i)) {
 
             // multiple parameter per channel sends are handled later
             if (i.indexOf('auxSend') === 0 || i.indexOf('channelGate') === 0 || i.indexOf('channelComp') === 0 || i.indexOf('channelEQ') === 0 || i.indexOf('channelDelay') === 0) {
@@ -1824,7 +1868,9 @@ var sendSyncRequest = function () {
 };
 
 
-module.exports = function (globalApp) {
+export {};
+
+module.exports = function (globalApp: Application) {
 
     app = globalApp;
     app.events.on('ready', init);

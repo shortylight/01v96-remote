@@ -1,27 +1,33 @@
 // connect to Raspberry Pi serial port
-var SerialPort = require('serialport'),
+const SerialPort = require('serialport'),
     fs = require('fs');
 
-var listener = false,
+interface SerialPortLike {
+    on(event: string, listener: (data: Buffer) => void): void;
+    write(message: number[]): void;
+}
+
+let listener: ((message: number[]) => void) | false = false,
     portOpened = false,
-    serialPort = false;
+    serialPort: SerialPortLike | false = false;
 
 if(fs.existsSync('/dev/ttyAMA0')) {
-    serialPort = new SerialPort('/dev/ttyAMA0', {
+    const port: SerialPortLike = new SerialPort('/dev/ttyAMA0', {
         baudRate: 38400
     });
+    serialPort = port;
 
-    serialPort.on('open', function() {
+    port.on('open', function() {
 
         console.log('[mixer_serialport] Serial port opened');
 
         portOpened = true;
 
-        var message = [];
+        let message: number[] = [];
 
         // collect parameter changes and emit to controller
-        serialPort.on('data', function(data) {
-            var obj = data.toJSON(),
+        port.on('data', function(data) {
+            let obj = Array.from(data),
                 startPosition,
                 endPosition;
 
@@ -86,7 +92,7 @@ else {
 
 
 
-var transmitMessage = function(message) {
+const transmitMessage = function(message: number[]) {
     if(listener) {
         listener(message);
     }
@@ -94,14 +100,16 @@ var transmitMessage = function(message) {
 
 
 
+export {};
+
 module.exports = {
 
-    setListener: function(l) {
+    setListener: function(l: (message: number[]) => void) {
         listener = l;
     },
 
-    send: function(message) {
-        if(portOpened) {
+    send: function(message: number[]) {
+        if(portOpened && serialPort) {
             serialPort.write(message);
         }
     }

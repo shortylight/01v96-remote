@@ -1,2 +1,2 @@
-node server.js midi 2
+npm start -- midi 2
 pause

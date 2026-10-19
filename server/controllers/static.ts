@@ -1,12 +1,14 @@
-var http = require('http'),
-    static = require('node-static'),
+import * as http from "node:http";
+import * as path from "node:path";
+import type { Application } from "../types";
 
-    app;
+const staticFiles = require('node-static');
+let app: Application;
 
 
-var init = function() {
-    var fileServer = new static.Server(
-        __dirname + '/../../client',
+const init = function() {
+    const fileServer = new staticFiles.Server(
+        path.resolve(__dirname, '../../../client'),
         {
             cache: 0
         }
@@ -25,7 +27,7 @@ var init = function() {
 
 
 
-module.exports = function(globalApp) {
+module.exports = function(globalApp: Application) {
     app = globalApp;
     app.events.on('ready', init);
 };

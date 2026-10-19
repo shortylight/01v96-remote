@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "author": "Michael Strobel",
   "license": "MIT",
-  "main": "server.js",
+  "main": "dist/server.js",
   "description": "WebSocket-MIDI bridge for Yamaha 01v96 Edit",
   "homepage": "https://github.com/kryops/01v96-remote",
   "bugs": "https://github.com/kryops/01v96-remote/issues",
@@ -12,11 +12,21 @@
     "url": "https://github.com/kryops/01v96-remote.git"
   },
   "scripts": {
-    "start": "node server.js"
+    "build": "tsc",
+    "start": "npm run build && node dist/server.js",
+    "lint": "eslint server.ts \"server/**/*.ts\""
   },
   "dependencies": {
     "@julusian/midi": "^3.8.1",
     "node-static": "^0.7.11",
     "ws": "^7.4.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.2"
   }
 }
