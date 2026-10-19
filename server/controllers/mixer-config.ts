@@ -156,7 +156,7 @@ export const config: MixerConfig = {
         0x43,		// Manufacturers ID Number (Yamaha)
         0x30,		// 3n; n 0..15 MIDI Channel
         0x3E,		// Model ID (Digital Mixer
-        0x0D,		// (01V96)
+        0x1A,		// Parameter Change List
         0x02,		// Adress / Setup Data
         0x04,		// Element Number (ChannelName)
         0x04,		// Parameter Number (Character Count)

@@ -10,6 +10,7 @@ export function createDeviceMessageHandler(
     let messageCache: number[] | false = false;
     let meterFilterCount = 0;
     let faderNameCache = '';
+    const channelNameCache: string[][] = [];
 
     return function deviceMessageHandler(message: number[]) {
         let outMessage: Record<string, any> | false = false,
@@ -612,7 +613,33 @@ export function createDeviceMessageHandler(
 
             }
         }
-        if (messageBeginsWith(config.sysExStartSpecific) ) {
+        if (
+            messageBeginsWith([0xF0, 0x43, 0x10, 0x3E, 0x1A]) &&
+            message[5] === 2 &&
+            message[6] === 4 &&
+            message[7] >= 0x04 &&
+            message[7] <= 0x13 &&
+            message[8] <= 0x1F &&
+            message.length >= 14
+        ) {
+            const channel = message[8];
+            const character = message[7] - 0x04;
+            if (!channelNameCache[channel]) {
+                channelNameCache[channel] = Array(16).fill(' ');
+            }
+            channelNameCache[channel][character] = String.fromCharCode(message[12]) || ' ';
+
+            if (character === 15) {
+                const name = channelNameCache[channel].join('').trimEnd();
+                status.faderName['channel' + (channel + 1)] = name;
+                outMessage = {
+                    type: "faderName",
+                    target: "channel",
+                    num: channel + 1,
+                    value: name
+                };
+            }
+        } else if (messageBeginsWith(config.sysExStartSpecific) ) {
             // program change -> sync again
             if (message[5] == 16) {
                 sendSyncRequest();

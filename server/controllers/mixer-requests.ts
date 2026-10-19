@@ -1,6 +1,8 @@
 import type { MixerConfig, MixerDevice, MixerStatus } from "./mixer-types";
 
 export function createMixerRequests(config: MixerConfig, status: MixerStatus, device: MixerDevice) {
+    let faderNameRequestTimer: NodeJS.Timeout | undefined;
+
     const sendRemoteMeterRequest = function () {
         let i;
         // effect meter request
@@ -18,22 +20,32 @@ export function createMixerRequests(config: MixerConfig, status: MixerStatus, de
     };
 
     const sendFaderNameRequest = function () {
-        while (true) {
-            device.send(config.remoteFaderNameRequest);
-                // character count
-                config.remoteFaderNameRequest[7]++;
-                if (config.remoteFaderNameRequest[7] > 0x13) {
-                    config.remoteFaderNameRequest[7] = 0x04;
-
-                    // channel number
-                    config.remoteFaderNameRequest[8]++;
-                    if (config.remoteFaderNameRequest[8] > 0x1F) {
-                        config.remoteFaderNameRequest[8] = 0x00;
-                        return
-                    }
-                }
+        if (faderNameRequestTimer) {
+            clearTimeout(faderNameRequestTimer);
         }
 
+        let character = 0x04;
+        let channel = 0;
+        const sendNextRequest = function () {
+            const request = config.remoteFaderNameRequest.slice();
+            request[7] = character;
+            request[8] = channel;
+            device.send(request);
+
+            character++;
+            if (character > 0x13) {
+                character = 0x04;
+                channel++;
+            }
+
+            if (channel <= 0x1F) {
+                faderNameRequestTimer = setTimeout(sendNextRequest, 10);
+            } else {
+                faderNameRequestTimer = undefined;
+            }
+        };
+
+        sendNextRequest();
     };
 
     const sendAuxNameRequest = function () {
