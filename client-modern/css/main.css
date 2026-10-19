@@ -56,13 +56,13 @@ button {
 }
 
 .connection-open-button {
-    min-height: 34px;
-    padding: 0 10px;
+    min-height: 38px;
+    padding: 0 12px;
     border: 1px solid #56616b;
     border-radius: 5px;
     background: #303940;
     color: #dfe4e8;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -79,6 +79,34 @@ button {
     color: #ff8585;
 }
 
+.bank-navigation {
+    display: flex;
+    flex: 0 0 42px;
+    align-items: stretch;
+    gap: 6px;
+    padding: 4px 10px;
+    border-bottom: 1px solid #30363c;
+    background: #20262c;
+}
+
+.bank-tab {
+    min-width: 88px;
+    padding: 0 16px;
+    border: 1px solid #56616b;
+    border-radius: 5px;
+    background: #303940;
+    color: #dfe4e8;
+    font-size: 12px;
+    font-weight: 700;
+    touch-action: manipulation;
+}
+
+.bank-tab.is-selected {
+    border-color: #52b4ca;
+    background: #17596a;
+    color: #fff;
+}
+
 .channel-bank {
     display: flex;
     flex: 1 1 auto;
@@ -92,6 +120,10 @@ button {
     overscroll-behavior-x: contain;
 }
 
+.channel-bank[hidden] {
+    display: none;
+}
+
 .channel-strip {
     display: flex;
     flex: 0 0 88px;
@@ -102,6 +134,66 @@ button {
     border: 1px solid #394148;
     border-radius: 8px;
     background: #252c32;
+}
+
+.channel-strip.master-strip .fader-range::-webkit-slider-thumb,
+.floating-master-fader .fader-range::-webkit-slider-thumb {
+    border-color: #d46666;
+    background: #a93f42;
+}
+
+.channel-strip.master-strip .fader-range::-moz-range-thumb,
+.floating-master-fader .fader-range::-moz-range-thumb {
+    border-color: #d46666;
+    background: #a93f42;
+}
+
+.channel-bank.has-floating-master::after {
+    content: "";
+    flex: 0 0 104px;
+}
+
+.floating-master-fader {
+    position: fixed;
+    z-index: 3;
+    right: 12px;
+    top: calc(env(safe-area-inset-top) + 98px);
+    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    width: 100px;
+}
+
+.floating-master-fader[hidden] {
+    display: none;
+}
+
+.floating-master-fader .channel-strip {
+    width: 100%;
+    height: 100%;
+    flex: 1 1 auto;
+    border-color: #929ba1;
+    background: #667078;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.settings-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    margin-top: 16px;
+    padding: 8px 10px;
+    border: 1px solid #3e484f;
+    border-radius: 5px;
+    background: #20262b;
+    color: #e0e5e8;
+    font-size: 14px;
+}
+
+.settings-option input {
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    accent-color: #52b4ca;
 }
 
 .strip-button {
@@ -383,6 +475,11 @@ button {
     margin: 14px 0 7px;
     color: #c3cbd0;
     font-size: 13px;
+}
+
+.connection-dialog .settings-option {
+    display: flex;
+    margin: 16px 0 4px;
 }
 
 .connection-dialog select {
@@ -706,7 +803,17 @@ button {
     background: #20262b;
 }
 
+.effect-field-header {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
 .effect-field-label {
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     color: #e0e5e8;
     font-size: 13px;
@@ -716,10 +823,50 @@ button {
 }
 
 .effect-field-value {
+    flex: 0 0 auto;
     color: #aebbc3;
     font-size: 12px;
     text-align: right;
     white-space: nowrap;
+}
+
+.effect-field-value-button {
+    min-height: 28px;
+    padding: 2px 0 2px 4px;
+    border: 0;
+    background: transparent;
+    color: #aebbc3;
+    font: inherit;
+    font-size: 12px;
+    text-align: right;
+    touch-action: manipulation;
+}
+
+.effect-field-value-button:active {
+    color: #52c3da;
+}
+
+.effect-reset-button {
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid #56616b;
+    border-radius: 4px;
+    background: #303940;
+    color: #c3cbd0;
+    font-size: 14px;
+    line-height: 20px;
+    touch-action: manipulation;
+}
+
+.effect-reset-button:active {
+    border-color: #52b4ca;
+    color: #fff;
+}
+
+.effect-reset-button:disabled {
+    opacity: 0.45;
 }
 
 .effect-field-range,
@@ -757,6 +904,50 @@ button {
     border-radius: 4px;
     background: #303940;
     color: #f4f5f6;
+}
+
+.effect-field-header .effect-field-select {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 74px;
+    max-width: 52%;
+    min-height: 36px;
+}
+
+.effect-value-dialog {
+    width: min(100%, 360px);
+    padding: 22px;
+    border: 1px solid #4b555d;
+    border-radius: 10px;
+    background: #252c32;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.effect-value-dialog h2 {
+    margin: 0 0 18px;
+    font-size: 19px;
+}
+
+.effect-value-dialog label {
+    display: block;
+    margin: 0 0 7px;
+    color: #c3cbd0;
+    font-size: 13px;
+}
+
+.effect-value-dialog input {
+    width: 100%;
+    min-height: 48px;
+    padding: 8px 10px;
+    border: 1px solid #68747d;
+    border-radius: 5px;
+    background: #15191d;
+    color: #fff;
+    font-size: 18px;
+}
+
+.effect-value-dialog .connection-feedback {
+    margin: 8px 0 0;
 }
 
 .effect-dialog .dialog-actions {

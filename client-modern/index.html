@@ -14,12 +14,18 @@
         <div id="connection-status" class="connection-status" role="status" aria-live="polite">
             Connecting…
         </div>
-        <button id="connection-open-button" class="connection-open-button" type="button">MIXER</button>
+        <button id="connection-open-button" class="connection-open-button" type="button">SETTINGS</button>
     </header>
+    <nav class="bank-navigation" aria-label="Mixer banks">
+        <button id="inputs-tab" class="bank-tab is-selected" type="button" aria-pressed="true">Inputs</button>
+        <button id="outputs-tab" class="bank-tab" type="button" aria-pressed="false">Outputs</button>
+    </nav>
     <main id="channel-bank" class="channel-bank" aria-label="Input channels"></main>
+    <main id="output-bank" class="channel-bank" aria-label="Output channels" hidden></main>
+    <aside id="floating-master-fader" class="floating-master-fader" aria-label="Floating Stereo Out fader" hidden></aside>
     <div id="connection-dialog" class="dialog-backdrop" hidden>
         <form id="connection-form" class="connection-dialog" role="dialog" aria-modal="true" aria-labelledby="connection-dialog-title">
-            <h2 id="connection-dialog-title">Mixer connection</h2>
+            <h2 id="connection-dialog-title">Settings</h2>
             <p id="connection-current" class="connection-current">Checking connection…</p>
             <label for="connection-mode">Connection type</label>
             <select id="connection-mode" name="mode"></select>
@@ -27,6 +33,10 @@
                 <label for="midi-port">Detected 01V96 console</label>
                 <select id="midi-port" name="portName"></select>
             </div>
+            <label class="settings-option" for="floating-master-toggle">
+                <input id="floating-master-toggle" type="checkbox">
+                <span>Show floating Stereo Out fader</span>
+            </label>
             <p id="connection-feedback" class="connection-feedback" role="status" aria-live="polite"></p>
             <div class="dialog-actions">
                 <button id="connection-cancel-button" type="button" class="dialog-cancel">Close</button>
@@ -55,6 +65,18 @@
                 <button id="pan-cancel-button" type="button" class="dialog-cancel">Cancel</button>
                 <button id="pan-center-button" type="button" class="dialog-cancel">Center</button>
                 <button type="submit" class="dialog-save">Done</button>
+            </div>
+        </form>
+    </div>
+    <div id="effect-value-dialog" class="dialog-backdrop" hidden>
+        <form id="effect-value-form" class="effect-value-dialog" role="dialog" aria-modal="true" aria-labelledby="effect-value-dialog-title">
+            <h2 id="effect-value-dialog-title">Set value</h2>
+            <label id="effect-value-label" for="effect-value-input">Value</label>
+            <input id="effect-value-input" name="value" type="text" inputmode="decimal" autocomplete="off">
+            <p id="effect-value-error" class="connection-feedback is-error" role="alert"></p>
+            <div class="dialog-actions">
+                <button id="effect-value-cancel" type="button" class="dialog-cancel">Cancel</button>
+                <button type="submit" class="dialog-save">Apply</button>
             </div>
         </form>
     </div>

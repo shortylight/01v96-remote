@@ -10,14 +10,15 @@ behavioral reference when extending it.
   replacement for the existing client.
 - The existing client stays on port `1337`; this client is served on port
   `1339`. Both use the existing WebSocket service on port `1338`.
-- The initial surface contains the 32 input channels. Broader mixer navigation
-  and non-channel controls are out of scope for this first pass.
+- The surface separates 32 input channels from the 17 output strips (AUX 1-8,
+  BUS 1-8, and Stereo Out) with lightweight Inputs/Outputs bank tabs.
 - The target device is a 9th-generation iPad running Safari. The layout
   supports both orientations and uses a horizontally scrollable channel bank
   rather than shrinking all 32 strips to fit at once.
-- The **MIXER** control opens connection settings. It lists supported
-  connection modes and detected 01V96 MIDI input/output pairs; the server
-  persists the confirmed choice for later launches.
+- The **SETTINGS** control opens connection settings and the local floating
+  Stereo Out fader preference. Connection settings list supported modes and
+  detected 01V96 MIDI input/output pairs; the server persists the confirmed
+  connection choice for later launches.
 
 ## Technology and compatibility
 
@@ -33,7 +34,7 @@ behavioral reference when extending it.
 
 ## Channel-strip composition
 
-Each strip is a reusable DOM component rendered by `makeChannelStrip()`.
+Each strip is a reusable DOM component rendered by `makeStrip()`.
 Controls stay in this vertical order:
 
 1. **CONFIG** — opens channel routing and mode parameters from the legacy
@@ -50,6 +51,21 @@ Controls stay in this vertical order:
 8. **Fader** — vertical range from `0` to `255`, with labeled dB tick marks.
 9. **Channel name**
 
+Output strips use the same fader, ON button, and effect popup components. Their
+order is CONFIG, COMP, EQ, DELAY, ON, fader, and output name; Gate and the
+input-only pan indicator are omitted. Output Config exposes the output Pan
+parameter supported by the existing protocol instead of channel-only phase
+and bus-routing settings. Comp, EQ, and Delay changes use the existing `aux`,
+`bus`, and `sum` targets, and opening an output popup requests that target's
+current effect parameters.
+
+Stereo Out uses a red fader thumb to distinguish the master. Settings can
+enable a persistent floating Stereo Out strip that stays visible over both
+input and output banks. The complete Stereo Out strip is moved into the
+floating panel and fills the available height; the Outputs bank gains trailing
+scroll space, and the Inputs bank gains the same space, so the last regular
+fader remains clear of the overlay on either bank.
+
 Gate, Comp, EQ, and Delay share one popup shell. The effect On/Off switch is
 in the top-right of the header; Done remains at the bottom right. Config hides
 the effect switch. Binary Off/On parameters use touch-friendly switches, and
@@ -58,6 +74,14 @@ settings use a connected segmented mode switch. Selection labels are shown
 only in their control, without a duplicate selected-value readout. Config
 keeps the common parameter controls and presents Bus 1-8 as numbered routing
 buttons under a shared **Bus routing** heading.
+
+Slider readouts open a text-entry dialog when tapped. Decimal dB fields display
+and accept tenths of a decibel; Compressor Threshold uses raw protocol values
+divided by 10, and Compressor Gain also applies the legacy Compander offset
+before display/input conversion. Table-backed sliders accept their displayed
+table labels. Sliders and native dropdown fields include a reset icon before
+their current value; reset returns the protocol value to zero, clamped to the
+control's supported range, or the first choice for a dropdown.
 
 EQ begins with a Mode and Attenuator row, followed by four band columns: Low,
 Low-mid, High-mid, and High. The Attenuator ranges from -96.0 dB to +12.0 dB.
@@ -86,14 +110,18 @@ the bottom of its strip; the modal editor caps names at eight characters.
 
 - Reuse the existing message protocol; do not introduce a second server-side
   mixer or WebSocket path.
+- Stereo Out is addressed as `sum0` for strip state and writes. The existing
+  effect-request path uses a one-based `num`, so its sync request uses `1` and
+  the client maps returned `sum1` effect values back to the strip's `sum0`.
 - Request `sync` after WebSocket connection and use the returned state for
   fader position, ON state, name, pan, pair state, and effect-button state.
+  The server also requests every supported mixer parameter in a paced queue
+  and streams the returned values to connected clients.
 - Send fader and ON changes as existing `fader` and `on` messages for target
-  `channel`. When a channel is paired, mirror fader and ON changes in the
+  `  channel`. When a channel is paired, mirror fader and ON changes in the
   partner strip while sending only the changed channel to the mixer. Pair
-  state is taken from the mixer, requested sequentially during sync, and
-  checked on both channels of each adjacent pair. The separate `kPairMS`
-  parameter is not the channel-pair enabled flag.
+  state is taken from the mixer and checked on both channels of each adjacent
+  pair. The separate `kPairMS` parameter is not the channel-pair enabled flag.
 - Send pan and Gate/Comp/EQ/Delay On changes as existing `faderEffect`
   messages. Gate, Comp, EQ, and Delay popups expose the properties, ranges,
   choices, and special EQ filter side-effects defined by the legacy client.
@@ -136,15 +164,17 @@ Connection setup uses two additional client messages:
 - Offset the fader axis and place tick labels in the adjacent gutter, fully
   outside the native range's hit area. Style the thumb in the same dark,
   muted palette as the channel-strip controls, with a cyan centerline.
-- Derive fader tick positions from 0-255 values. The labeled marks use the
-  existing input-channel conversion: -∞ at 0; -50 at 11; -40 at 23; -30 at
-  43; -20 at 79; -15 at 105; -10 at 143; -5 at 179; 0 at 207; +5 at 231;
-  and +10 at 255.
+- Derive fader tick positions from 0-255 values. Inputs use the channel
+  conversion: -∞ at 0; -50 at 11; -40 at 23; -30 at 43; -20 at 79; -15 at
+  105; -10 at 143; -5 at 179; 0 at 207; +5 at 231; and +10 at 255. AUX,
+  BUS, and Stereo Out use the bus/output conversion: -∞ at 0; -70 at 21;
+  -60 at 29; -50 at 47; -40 at 75; -30 at 105; -20 at 147; -15 at 177;
+  -10 at 203; -5 at 233; and 0 at 255.
 
 ## Boundaries for future work
 
-- Make additional strip kinds or navigation explicit additions; the current
-  client assumes 32 input channels.
+- Extend the explicit Inputs/Outputs banks when adding further strip kinds or
+  navigation; the current output bank represents AUX, BUS, and Stereo Out.
 - Before adding effect parameter editors, verify property names, units, ranges,
   and encodings against the existing client and Yamaha references.
 - Keep browser state in step with incoming WebSocket updates, including

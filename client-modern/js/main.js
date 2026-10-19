@@ -15,9 +15,27 @@
         { label: '+5', value: 231 },
         { label: '+10', value: 255 }
     ];
+    var outputFaderTicks = [
+        { label: '-∞', value: 0 },
+        { label: '-70', value: 21 },
+        { label: '-60', value: 29 },
+        { label: '-50', value: 47 },
+        { label: '-40', value: 75 },
+        { label: '-30', value: 105 },
+        { label: '-20', value: 147 },
+        { label: '-15', value: 177 },
+        { label: '-10', value: 203 },
+        { label: '-5', value: 233 },
+        { label: '0', value: 255 }
+    ];
     var channelBank = document.getElementById('channel-bank');
+    var outputBank = document.getElementById('output-bank');
+    var inputsTab = document.getElementById('inputs-tab');
+    var outputsTab = document.getElementById('outputs-tab');
+    var floatingMasterFader = document.getElementById('floating-master-fader');
     var connectionStatus = document.getElementById('connection-status');
     var connectionDialog = document.getElementById('connection-dialog');
+    var floatingMasterToggle = document.getElementById('floating-master-toggle');
     var connectionMode = document.getElementById('connection-mode');
     var midiPort = document.getElementById('midi-port');
     var midiPortField = document.getElementById('midi-port-field');
@@ -30,6 +48,12 @@
     var panForm = document.getElementById('pan-form');
     var panValue = document.getElementById('pan-value-input');
     var panReadout = document.getElementById('pan-dialog-value');
+    var effectValueDialog = document.getElementById('effect-value-dialog');
+    var effectValueForm = document.getElementById('effect-value-form');
+    var effectValueTitle = document.getElementById('effect-value-dialog-title');
+    var effectValueLabel = document.getElementById('effect-value-label');
+    var effectValueInput = document.getElementById('effect-value-input');
+    var effectValueError = document.getElementById('effect-value-error');
     var effectDialog = document.getElementById('effect-dialog');
     var effectDialogPanel = effectDialog.querySelector('.effect-dialog');
     var effectDialogTitle = document.getElementById('effect-dialog-title');
@@ -38,7 +62,11 @@
     var selectedChannel = 0;
     var activePopupEffect = '';
     var activePopupChannel = 0;
+    var activeValueDefinition = null;
+    var activeValueEffect = '';
+    var activeValueChannel = 0;
     var connectionSelectionPending = false;
+    var showFloatingMaster = window.localStorage.getItem('showFloatingMasterFader') === 'true';
     var socket;
     var reconnectTimer;
     var lastSentFader = {};
@@ -76,11 +104,11 @@
         ],
         comp: [
             { name: 'Type', choices: ['Comp', 'Expander', 'Compander H', 'Compander S'] },
-            { name: 'Threshold', min: -540, max: 0, unit: '0.1 dB' },
+            { name: 'Threshold', min: -540, max: 0, compThreshold: true },
             { name: 'Ratio', min: 0, max: 15, table: 'table08' },
             { name: 'Attac', min: 0, max: 120, unit: 'ms' },
             { name: 'Release', min: 0, max: 159, table: 'table07' },
-            { name: 'Gain', min: 0, max: 180, unit: '0.1 dB' },
+            { name: 'Gain', min: 0, max: 180, compGain: true },
             { name: 'Knee', choices: ['Hard', '1', '2', '3', '4', '5'] },
             { name: 'Location', choices: ['Pre EQ', 'Post EQ', 'Post Fader'] },
             { name: 'Link', choices: ['Off', 'On'] }
@@ -140,8 +168,40 @@
         }
     }
 
+    function stripAddress(strip) {
+        return typeof strip === 'number' ? { target: 'channel', num: strip } : strip;
+    }
+
     function channelKey(channel) {
-        return 'channel' + channel;
+        var address = stripAddress(channel);
+        return address.target + address.num;
+    }
+
+    function stripElement(strip) {
+        var address = stripAddress(strip);
+        var id = address.target === 'channel' ?
+            'channel-' + address.num : 'output-' + address.target + '-' + address.num;
+        return document.getElementById(id);
+    }
+
+    function stripLabel(strip) {
+        var address = stripAddress(strip);
+        if (address.target === 'channel') return 'CH ' + address.num;
+        if (address.target === 'sum') return 'STEREO';
+        return address.target.toUpperCase() + ' ' + address.num;
+    }
+
+    function sameStrip(first, second) {
+        return channelKey(first) === channelKey(second);
+    }
+
+    function normalizeStereoEffectState() {
+        Object.keys(state.faderEffect).forEach(function (effect) {
+            Object.keys(state.faderEffect[effect]).forEach(function (parameter) {
+                var values = state.faderEffect[effect][parameter];
+                if (values && values.sum1 !== undefined) values.sum0 = values.sum1;
+            });
+        });
     }
 
     function pairedChannel(channel) {
@@ -249,8 +309,14 @@
         return values && values[channelKey(channel)] !== undefined ? Number(values[channelKey(channel)]) : 0;
     }
 
-    function parameterDisplay(definition, value) {
+    function parameterDisplay(definition, value, channel) {
         if (definition.choices) return definition.choices[value] || String(value);
+        if (definition.pan) return panLabel(value);
+        if (definition.compThreshold) return (value / 10).toFixed(1) + ' dB';
+        if (definition.compGain) {
+            var gainValue = value - (parameterValue('comp', 'Type', channel) > 1 ? 180 : 0);
+            return (gainValue / 10).toFixed(1) + ' dB';
+        }
         if (definition.eqGain) return (value / 10).toFixed(1) + ' dB';
         if (definition.eqAttenuator) return (value / 10).toFixed(1) + ' dB';
         if (definition.eqQ) return legacyTables.table11[value] || 'Code ' + value;
@@ -258,6 +324,51 @@
             return legacyTables[definition.table][value] || 'Code ' + value;
         }
         return definition.unit ? value + ' ' + definition.unit : String(value);
+    }
+
+    function parameterInputValue(definition, value, channel) {
+        if (definition.compThreshold || definition.compGain || definition.eqGain ||
+            definition.eqAttenuator) {
+            return parameterDisplay(definition, value, channel).replace(/ dB$/, '');
+        }
+        return parameterDisplay(definition, value, channel);
+    }
+
+    function parseParameterInput(definition, input, channel) {
+        var text = input.trim();
+        var number;
+        var choices;
+        var table;
+        var match;
+        if (definition.choices) {
+            choices = definition.choices.map(function (choice) { return choice.toLowerCase(); });
+            number = choices.indexOf(text.toLowerCase());
+            return number === -1 ? null : number;
+        }
+        if (definition.pan) {
+            match = text.match(/^(?:([lr])\s*)?(-?\d+(?:\.\d+)?)$/i);
+            if (text.toUpperCase() === 'C') return 0;
+            if (!match) return null;
+            number = Number(match[2]);
+            if (match[1] && match[1].toLowerCase() === 'l') number = -Math.abs(number);
+            else if (match[1] && match[1].toLowerCase() === 'r') number = Math.abs(number);
+            return Number.isInteger(number) && number >= -63 && number <= 63 ? number : null;
+        }
+        if (definition.table || definition.eqQ) {
+            table = definition.eqQ ? legacyTables.table11 : legacyTables[definition.table];
+            number = table.map(function (value) { return value.toLowerCase(); }).indexOf(text.toLowerCase());
+            if (number !== -1) return number;
+        }
+        match = text.match(/^-?\d+(?:\.\d+)?(?:\s*(?:dB|ms|s|Hz|kHz|samples))?$/i);
+        if (!match) return null;
+        number = Number(text.replace(/\s*(?:dB|ms|s|Hz|kHz|samples)$/i, ''));
+        if (definition.compThreshold || definition.eqGain || definition.eqAttenuator) {
+            number *= 10;
+        } else if (definition.compGain) {
+            number = number * 10 + (parameterValue('comp', 'Type', channel) > 1 ? 180 : 0);
+        }
+        if (!Number.isInteger(number) || number < definition.min || number > definition.max) return null;
+        return number;
     }
 
     function eqQKey(parameter, channel) {
@@ -313,8 +424,41 @@
         return group;
     }
 
+    function resetParameterValue(definition, effect, channel) {
+        if (definition.choices) return 0;
+        return Math.max(definition.min, Math.min(definition.max, 0));
+    }
+
+    function addResetButton(definition, effect, channel) {
+        var button = element('button', 'effect-reset-button', '↺');
+        button.type = 'button';
+        button.title = 'Reset ' + (definition.label || definition.name);
+        button.setAttribute('aria-label', button.title);
+        button.addEventListener('click', function () {
+            sendEffectParameter(channel, effect, definition.name,
+                resetParameterValue(definition, effect, channel));
+        });
+        return button;
+    }
+
+    function openEffectValueDialog(definition, effect, channel) {
+        activeValueDefinition = definition;
+        activeValueEffect = effect;
+        activeValueChannel = channel;
+        effectValueTitle.textContent = 'Set ' + (definition.label || definition.name);
+        effectValueLabel.textContent = (definition.label || definition.name) +
+            ' · ' + stripLabel(channel);
+        effectValueLabel.htmlFor = 'effect-value-input';
+        effectValueInput.value = parameterInputValue(definition,
+            parameterValue(effect, definition.name, channel), channel);
+        effectValueError.textContent = '';
+        effectValueDialog.hidden = false;
+        effectValueInput.focus();
+        effectValueInput.select();
+    }
+
     function updateEffectParameterControl(effect, parameter, channel) {
-        if (effect !== activePopupEffect || channel !== activePopupChannel) return;
+        if (effect !== activePopupEffect || !sameStrip(channel, activePopupChannel)) return;
         var field = effectFields.querySelector('[data-parameter="' + parameter + '"]');
         if (!field) return;
         var value = parameterValue(effect, parameter, channel);
@@ -336,15 +480,17 @@
                 !!parameterValue('eq', 'HPFOn', channel) :
                 parameter === 'HiQ' ? !!parameterValue('eq', 'LPFOn', channel) : false;
             var qSlider = field.querySelector('.eq-q-slider');
-            var qOutput = field.querySelector('output');
+            var qOutput = field.querySelector('.effect-field-value');
+            var qReset = field.querySelector('.effect-reset-button');
             var shelfValue = parameter === 'LowQ' ? 41 : 42;
             var qModeValue = value === 43 || value === 44 ? rememberedValue : value;
             var isShelf = qModeValue === shelfValue;
             if (qSlider && document.activeElement !== qSlider) qSlider.value = isShelf ? 41 : qModeValue;
             if (qSlider) qSlider.disabled = filterOn;
+            if (qReset) qReset.disabled = filterOn;
             if (qOutput) qOutput.textContent = isShelf ?
                 (parameter === 'LowQ' ? 'Low Shelving' : 'High Shelving') :
-                parameterDisplay(definition, qModeValue);
+                parameterDisplay(definition, qModeValue, channel);
             field.classList.toggle('is-disabled', filterOn);
             return;
         }
@@ -360,14 +506,14 @@
             });
             return;
         }
-        var control = field.querySelector('input, select, button');
-        var output = field.querySelector('output');
+        var control = field.querySelector('.effect-field-range, .effect-field-select, .effect-switch');
+        var output = field.querySelector('.effect-field-value');
         if (control && control.getAttribute('role') === 'switch') {
             control.textContent = value ? 'ON' : 'OFF';
             control.setAttribute('aria-checked', value ? 'true' : 'false');
             control.classList.toggle('is-active', !!value);
         } else if (control && document.activeElement !== control) control.value = value;
-        if (output) output.textContent = parameterDisplay(definition, value);
+        if (output) output.textContent = parameterDisplay(definition, value, channel);
     }
 
     function addEqQParameter(definition, band, channel, container) {
@@ -382,11 +528,21 @@
         var field = element('div', 'effect-field eq-parameter-cell');
         field.dataset.parameter = definition.name;
         field._definition = definition;
-        field.appendChild(element('label', 'effect-field-label', 'Q'));
-        var output = element('output', 'effect-field-value', isShelf ?
+        var header = element('div', 'effect-field-header');
+        header.appendChild(element('label', 'effect-field-label', 'Q'));
+        var output = element('button', 'effect-field-value effect-field-value-button', isShelf ?
             (band === 'low' ? 'Low Shelving' : 'High Shelving') :
-            parameterDisplay(definition, shapeValue));
-        field.appendChild(output);
+            parameterDisplay(definition, shapeValue, channel));
+        output.type = 'button';
+        output.setAttribute('aria-label', 'Set ' + definition.name + ' value');
+        output.addEventListener('click', function () {
+            openEffectValueDialog(definition, 'eq', channel);
+        });
+        header.appendChild(output);
+        var resetButton = addResetButton(definition, 'eq', channel);
+        resetButton.disabled = filterOn;
+        header.appendChild(resetButton);
+        field.appendChild(header);
         var slider = element('input', 'effect-field-range eq-q-slider');
         slider.type = 'range';
         slider.min = '0';
@@ -402,7 +558,7 @@
             if (sliderValue < 41) rememberEqQ(definition.name, channel, value);
             output.textContent = sliderValue === 41 ?
                 (band === 'low' ? 'Low Shelving' : 'High Shelving') :
-                parameterDisplay(definition, value);
+                parameterDisplay(definition, value, channel);
             sendEffectParameter(channel, 'eq', definition.name, value);
         });
         field.appendChild(slider);
@@ -426,6 +582,7 @@
     }
 
     function sendEffectParameter(channel, effect, parameter, value) {
+        var address = stripAddress(channel);
         if (!state.faderEffect[effect]) state.faderEffect[effect] = {};
         if (!state.faderEffect[effect][parameter]) state.faderEffect[effect][parameter] = {};
         var values = state.faderEffect[effect][parameter];
@@ -433,8 +590,8 @@
         if (effect === 'eq' && /Q$/.test(parameter)) rememberEqQ(parameter, channel, value);
         send({
             type: 'faderEffect',
-            target: 'channel',
-            num: channel,
+            target: address.target,
+            num: address.num,
             value: value,
             prop: parameter,
             effect: effect
@@ -442,11 +599,11 @@
         updateEffectParameterControl(effect, parameter, channel);
         if (parameter === 'On') {
             updateEffect(channel, effect);
-            if (effect === activePopupEffect && channel === activePopupChannel) updateEffectOnButton();
+            if (effect === activePopupEffect && sameStrip(channel, activePopupChannel)) updateEffectOnButton();
         }
-        if (effect === 'gate' && parameter === 'KeyIn' && effect === activePopupEffect && channel === activePopupChannel) {
+        if (effect === 'gate' && parameter === 'KeyIn' && effect === activePopupEffect && sameStrip(channel, activePopupChannel)) {
             renderEffectFields();
-        } else if (effect === 'comp' && parameter === 'Type' && effect === activePopupEffect && channel === activePopupChannel) {
+        } else if (effect === 'comp' && parameter === 'Type' && effect === activePopupEffect && sameStrip(channel, activePopupChannel)) {
             renderEffectFields();
         }
 
@@ -456,7 +613,7 @@
                 (parameter === 'LPFOn' ? 43 : 44) :
                 rememberedEqQ(qParameter, channel);
             sendEffectParameter(channel, effect, qParameter, qValue);
-            if (effect === activePopupEffect && channel === activePopupChannel) renderEffectFields();
+            if (effect === activePopupEffect && sameStrip(channel, activePopupChannel)) renderEffectFields();
         } else if (effect === 'comp' && parameter === 'Type' && value < 2 && parameterValue('comp', 'Knee', channel) > 5) {
             sendEffectParameter(channel, effect, 'Knee', 5);
         }
@@ -483,10 +640,19 @@
         field.dataset.parameter = definition.name;
         field._definition = definition;
         if (definition.className) field.classList.add(definition.className);
+        var header = element('div', 'effect-field-header');
         var label = element('label', 'effect-field-label', definition.label || definition.name);
         label.htmlFor = 'effect-' + definition.name;
         var output = definition.choices ? null :
-            element('output', 'effect-field-value', parameterDisplay(definition, currentValue));
+            element('button', 'effect-field-value effect-field-value-button',
+                parameterDisplay(definition, currentValue, channel));
+        if (output) {
+            output.type = 'button';
+            output.setAttribute('aria-label', 'Set ' + (definition.label || definition.name) + ' value');
+            output.addEventListener('click', function () {
+                openEffectValueDialog(definition, effect, channel);
+            });
+        }
         var control;
 
         if (definition.choices && definition.choices.length === 2 &&
@@ -530,7 +696,7 @@
             control.value = Math.max(definition.min, Math.min(definition.max, currentValue));
             control.addEventListener('input', function () {
                 var value = Number(control.value);
-                output.textContent = parameterDisplay(definition, value);
+                output.textContent = parameterDisplay(definition, value, channel);
                 sendEffectParameter(channel, effect, definition.name, value);
             });
         }
@@ -540,9 +706,18 @@
             field.classList.add('is-disabled');
         }
         control.id = 'effect-' + definition.name;
-        field.appendChild(label);
-        if (output) field.appendChild(output);
-        field.appendChild(control);
+        header.appendChild(label);
+        var resetButton = null;
+        if (control.classList.contains('effect-field-range') ||
+            control.classList.contains('effect-field-select')) {
+            resetButton = addResetButton(definition, effect, channel);
+            resetButton.disabled = !!definition.disabled;
+        }
+        if (output) header.appendChild(output);
+        if (control.classList.contains('effect-field-select')) header.appendChild(control);
+        if (resetButton) header.appendChild(resetButton);
+        field.appendChild(header);
+        if (!control.classList.contains('effect-field-select')) field.appendChild(control);
         container.appendChild(field);
     }
 
@@ -551,9 +726,20 @@
         activePopupChannel = channel;
         nameDialog.hidden = true;
         panDialog.hidden = true;
-        effectDialogTitle.textContent = (effect === 'main' ? 'Channel config' : effect.toUpperCase()) + ' · CH ' + channel;
+        effectValueDialog.hidden = true;
+        effectDialogTitle.textContent = (effect === 'main' ? 'CONFIG' : effect.toUpperCase()) +
+            ' · ' + stripLabel(channel);
         effectDialogPanel.classList.toggle('is-config', effect === 'main');
         effectOnButton.hidden = effect === 'main';
+        rememberChannelEqQ(channel);
+        if (stripAddress(channel).target !== 'channel') {
+            var address = stripAddress(channel);
+            send({
+                type: 'syncEffect',
+                target: address.target,
+                num: address.target === 'sum' ? 1 : address.num
+            });
+        }
         renderEffectFields();
         updateEffectOnButton();
         effectDialog.hidden = false;
@@ -562,6 +748,16 @@
     function renderEffectFields() {
         effectFields.textContent = '';
         if (activePopupEffect === 'main') {
+            if (stripAddress(activePopupChannel).target !== 'channel') {
+                addEffectParameter({
+                    name: 'Pan',
+                    label: 'Pan',
+                    min: -63,
+                    max: 63,
+                    pan: true
+                }, 'main', activePopupChannel);
+                return;
+            }
             effectDefinitions.main.forEach(function (definition) {
                 addEffectParameter(definition, 'main', activePopupChannel);
             });
@@ -687,42 +883,60 @@
     }
 
     function updateFader(channel, value) {
-        var strip = document.getElementById('channel-' + channel);
+        var address = stripAddress(channel);
         lastSentFader[channelKey(channel)] = Number(value);
+        updateFaderControls(address, value);
+    }
+
+    function updateFaderControls(channel, value) {
+        var address = stripAddress(channel);
+        var strip = stripElement(address);
         if (strip) {
             strip.querySelector('.fader-range').value = value;
-            updateFaderHandle(channel, value);
         }
+        if (address.target === 'sum' && floatingMasterFader.querySelector('.fader-range')) {
+            floatingMasterFader.querySelector('.fader-range').value = value;
+        }
+        updateFaderHandle(address, value);
     }
 
     function updateFaderHandle(channel, value) {
-        var strip = document.getElementById('channel-' + channel);
-        if (!strip) return;
-        var track = strip.querySelector('.fader-track');
+        var address = stripAddress(channel);
+        var tracks = [];
+        var strip = stripElement(address);
+        if (strip) tracks.push(strip.querySelector('.fader-track'));
+        if (address.target === 'sum') {
+            var floatingTrack = floatingMasterFader.querySelector('.fader-track');
+            if (floatingTrack) tracks.push(floatingTrack);
+        }
         var thumbWidth = 34;
-        var travel = Math.max(0, track.clientHeight - thumbWidth);
-        track.querySelector('.fader-handle-centerline').style.bottom =
-            (thumbWidth / 2 + travel * Number(value) / 255) + 'px';
+        tracks.forEach(function (track) {
+            var travel = Math.max(0, track.clientHeight - thumbWidth);
+            track.querySelector('.fader-handle-centerline').style.bottom =
+                (thumbWidth / 2 + travel * Number(value) / 255) + 'px';
+        });
     }
 
     function sendFaderValue(channel, value, force) {
+        var address = stripAddress(channel);
         var key = channelKey(channel);
         var previous = lastSentFader[key];
         state.fader[key] = value;
-        updatePairedFader(channel, value);
+        updateFaderControls(address, value);
+        if (address.target === 'channel') updatePairedFader(address.num, value);
         if (previous === undefined || Math.abs(value - previous) >= 3 || value === 0 || value === 255) {
             if (value !== previous) {
-                send({ type: 'fader', target: 'channel', num: channel, value: value });
+                send({ type: 'fader', target: address.target, num: address.num, value: value });
                 lastSentFader[key] = value;
             }
         } else if (force && value !== previous) {
-            send({ type: 'fader', target: 'channel', num: channel, value: value });
+            send({ type: 'fader', target: address.target, num: address.num, value: value });
             lastSentFader[key] = value;
         }
     }
 
     function updateOn(channel, value) {
-        var strip = document.getElementById('channel-' + channel);
+        var strip = stripElement(channel);
         if (!strip) return;
         var button = strip.querySelector('.on-button');
         button.classList.toggle('is-active', !!value);
@@ -730,16 +944,18 @@
     }
 
     function updateName(channel, value) {
-        var strip = document.getElementById('channel-' + channel);
+        var strip = stripElement(channel);
         if (!strip) return;
         var nameButton = strip.querySelector('.channel-name');
-        var displayName = value.trim() || 'CH' + channel;
+        var displayName = String(value || '').trim() || stripLabel(channel);
         nameButton.textContent = displayName;
-        nameButton.setAttribute('aria-label', 'Edit channel name ' + displayName);
+        if (stripAddress(channel).target === 'channel') {
+            nameButton.setAttribute('aria-label', 'Edit channel name ' + displayName);
+        }
     }
 
     function updateEffect(channel, effect) {
-        var strip = document.getElementById('channel-' + channel);
+        var strip = stripElement(channel);
         if (!strip) return;
         var value = parameterValue(effect, 'On', channel);
         var button = strip.querySelector('[data-effect="' + effect + '"]');
@@ -747,7 +963,7 @@
             button.classList.toggle('is-active', !!value);
             button.setAttribute('aria-pressed', value ? 'true' : 'false');
         }
-        if (effect === activePopupEffect && channel === activePopupChannel) updateEffectOnButton();
+        if (effect === activePopupEffect && sameStrip(channel, activePopupChannel)) updateEffectOnButton();
     }
 
     function addButton(strip, label, className, action, effect) {
@@ -765,101 +981,118 @@
         return button;
     }
 
-    function makeChannelStrip(channel) {
-        var key = channelKey(channel);
-        var strip = element('section', 'channel-strip');
-        strip.id = 'channel-' + channel;
-        strip.setAttribute('aria-label', 'Channel ' + channel);
-
-        addButton(strip, 'CONFIG', 'config-button', function () {
-            openEffectPopup('main', channel);
-        });
-
-        [
-            { label: 'GATE', effect: 'gate' },
-            { label: 'COMP', effect: 'comp' },
-            { label: 'EQ', effect: 'eq' },
-            { label: 'DELAY', effect: 'delay' }
-        ].forEach(function (entry) {
-            addButton(strip, entry.label, 'effect-button', function () {
-                openEffectPopup(entry.effect, channel);
-            }, entry.effect);
-        });
-
-        var panControl = element('button', 'pan-trigger');
-        panControl.type = 'button';
-        panControl.setAttribute('aria-label', 'Pan center, open pan control');
-        panControl.setAttribute('aria-haspopup', 'dialog');
-        var panTrack = element('span', 'pan-indicator-track');
-        panTrack.setAttribute('aria-hidden', 'true');
-        panTrack.appendChild(element('span', 'pan-center-mark'));
-        panTrack.appendChild(element('span', 'pan-indicator'));
-        panControl.appendChild(panTrack);
-        panControl.addEventListener('click', function () {
-            selectedChannel = channel;
-            panValue.value = state.faderEffect.main.Pan[key] || 0;
-            panReadout.textContent = panLabel(Number(panValue.value));
-            effectDialog.hidden = true;
-            nameDialog.hidden = true;
-            panDialog.hidden = false;
-            panValue.focus();
-        });
-        strip.appendChild(panControl);
-
-        addButton(strip, 'ON', 'on-button', function (button) {
-            var next = !state.on[key];
-            state.on[key] = next;
-            updateOn(channel, next);
-            updatePairedOn(channel, next);
-            send({ type: 'on', target: 'channel', num: channel, value: next });
-            button.blur();
-        });
-
+    function makeFaderControl(stripInfo) {
+        var address = stripAddress(stripInfo);
         var faderArea = element('div', 'fader-area');
         var faderTrack = element('div', 'fader-track');
         faderTrack.appendChild(element('div', 'fader-rail'));
         var faderRange = element('input', 'fader-range');
         var faderCenterline = element('div', 'fader-handle-centerline');
+        var key = channelKey(address);
         faderCenterline.setAttribute('aria-hidden', 'true');
         faderRange.type = 'range';
         faderRange.min = '0';
         faderRange.max = '255';
         faderRange.step = '1';
-        faderRange.value = '0';
-        faderRange.setAttribute('aria-label', 'Channel ' + channel + ' fader');
+        faderRange.value = Number(state.fader[key]) || 0;
+        faderRange.setAttribute('aria-label', stripLabel(address) + ' fader');
         faderRange.addEventListener('input', function () {
             var value = Number(faderRange.value);
-            updateFaderHandle(channel, value);
-            sendFaderValue(channel, value, false);
+            updateFaderHandle(address, value);
+            sendFaderValue(address, value, false);
         });
         faderRange.addEventListener('change', function () {
             var value = Number(faderRange.value);
-            updateFaderHandle(channel, value);
-            sendFaderValue(channel, value, true);
+            updateFaderHandle(address, value);
+            sendFaderValue(address, value, true);
         });
         faderTrack.appendChild(faderRange);
         faderTrack.appendChild(faderCenterline);
-        faderTicks.forEach(function (tick) {
+        var ticks = address.target === 'channel' ? faderTicks : outputFaderTicks;
+        ticks.forEach(function (tick) {
             var mark = element('div', 'fader-tick');
             mark.dataset.value = tick.value;
             mark.appendChild(element('span', '', tick.label));
             faderTrack.appendChild(mark);
         });
         faderArea.appendChild(faderTrack);
-        strip.appendChild(faderArea);
-        var channelName = element('button', 'channel-name', 'CH' + channel);
-        channelName.type = 'button';
-        channelName.setAttribute('aria-label', 'Edit channel name CH' + channel);
-        channelName.addEventListener('click', function () {
-            selectedChannel = channel;
-            nameInput.value = state.faderName[key] || 'CH' + channel;
-            effectDialog.hidden = true;
-            panDialog.hidden = true;
-            nameDialog.hidden = false;
-            nameInput.focus();
-            nameInput.select();
+        return faderArea;
+    }
+
+    function makeStrip(stripInfo) {
+        var address = stripAddress(stripInfo);
+        var key = channelKey(address);
+        var isChannel = address.target === 'channel';
+        var strip = element('section', 'channel-strip');
+        strip.id = isChannel ? 'channel-' + address.num :
+            'output-' + address.target + '-' + address.num;
+        if (address.target === 'sum') strip.classList.add('master-strip');
+        strip.setAttribute('aria-label', isChannel ?
+            'Channel ' + address.num : stripLabel(address));
+
+        addButton(strip, 'CONFIG', 'config-button', function () {
+            openEffectPopup('main', address);
         });
-        strip.appendChild(channelName);
+
+        var stripEffects = isChannel ?
+            [{ label: 'GATE', effect: 'gate' }, { label: 'COMP', effect: 'comp' },
+                { label: 'EQ', effect: 'eq' }, { label: 'DELAY', effect: 'delay' }] :
+            [{ label: 'COMP', effect: 'comp' }, { label: 'EQ', effect: 'eq' },
+                { label: 'DELAY', effect: 'delay' }];
+        stripEffects.forEach(function (entry) {
+            addButton(strip, entry.label, 'effect-button', function () {
+                openEffectPopup(entry.effect, address);
+            }, entry.effect);
+        });
+
+        if (isChannel) {
+            var panControl = element('button', 'pan-trigger');
+            panControl.type = 'button';
+            panControl.setAttribute('aria-label', 'Pan center, open pan control');
+            panControl.setAttribute('aria-haspopup', 'dialog');
+            var panTrack = element('span', 'pan-indicator-track');
+            panTrack.setAttribute('aria-hidden', 'true');
+            panTrack.appendChild(element('span', 'pan-center-mark'));
+            panTrack.appendChild(element('span', 'pan-indicator'));
+            panControl.appendChild(panTrack);
+            panControl.addEventListener('click', function () {
+                selectedChannel = address.num;
+                panValue.value = state.faderEffect.main.Pan[key] || 0;
+                panReadout.textContent = panLabel(Number(panValue.value));
+                effectDialog.hidden = true;
+                nameDialog.hidden = true;
+                panDialog.hidden = false;
+                panValue.focus();
+            });
+            strip.appendChild(panControl);
+        }
+
+        addButton(strip, 'ON', 'on-button', function (button) {
+            var next = !state.on[key];
+            state.on[key] = next;
+            updateOn(address, next);
+            if (isChannel) updatePairedOn(address.num, next);
+            send({ type: 'on', target: address.target, num: address.num, value: next });
+            button.blur();
+        });
+
+        strip.appendChild(makeFaderControl(address));
+        var stripName = element(isChannel ? 'button' : 'div', 'channel-name',
+            state.faderName[key] || stripLabel(address));
+        if (isChannel) {
+            stripName.type = 'button';
+            stripName.setAttribute('aria-label', 'Edit channel name ' + stripName.textContent);
+            stripName.addEventListener('click', function () {
+                selectedChannel = address.num;
+                nameInput.value = state.faderName[key] || 'CH' + address.num;
+                effectDialog.hidden = true;
+                panDialog.hidden = true;
+                nameDialog.hidden = false;
+                nameInput.focus();
+                nameInput.select();
+            });
+        }
+        strip.appendChild(stripName);
         return strip;
     }
 
@@ -867,9 +1100,37 @@
         var fragment = document.createDocumentFragment();
         var channel;
         for (channel = 1; channel <= channelCount; channel++) {
-            fragment.appendChild(makeChannelStrip(channel));
+            fragment.appendChild(makeStrip(channel));
         }
         channelBank.appendChild(fragment);
+    }
+
+    function renderOutputChannels() {
+        var fragment = document.createDocumentFragment();
+        var outputNumber;
+        ['aux', 'bus'].forEach(function (target) {
+            for (outputNumber = 1; outputNumber <= 8; outputNumber++) {
+                fragment.appendChild(makeStrip({ target: target, num: outputNumber }));
+            }
+        });
+        fragment.appendChild(makeStrip({ target: 'sum', num: 0 }));
+        outputBank.appendChild(fragment);
+    }
+
+    function applyFloatingMasterPreference() {
+        var fixedMaster = document.getElementById('output-sum-0');
+        floatingMasterToggle.checked = showFloatingMaster;
+        floatingMasterFader.hidden = !showFloatingMaster;
+        channelBank.classList.toggle('has-floating-master', showFloatingMaster);
+        outputBank.classList.toggle('has-floating-master', showFloatingMaster);
+        if (showFloatingMaster) {
+            if (fixedMaster.parentNode !== floatingMasterFader) {
+                floatingMasterFader.appendChild(fixedMaster);
+            }
+        } else if (fixedMaster.parentNode !== outputBank) {
+            outputBank.appendChild(fixedMaster);
+        }
+        fitFaders();
     }
 
     function fitFaders() {
@@ -901,6 +1162,9 @@
             state.faderName = message.status.faderName || {};
             state.faderPair = message.status.faderPair || {};
             state.faderEffect = message.status.faderEffect || state.faderEffect;
+            if (!state.faderEffect.main) state.faderEffect.main = { Pan: {} };
+            if (!state.faderEffect.main.Pan) state.faderEffect.main.Pan = {};
+            normalizeStereoEffectState();
             for (var channel = 1; channel <= channelCount; channel++) {
                 key = channelKey(channel);
                 rememberChannelEqQ(channel);
@@ -912,45 +1176,76 @@
                     updateEffect(channel, name);
                 });
             }
+            [
+                { target: 'aux', count: 8 },
+                { target: 'bus', count: 8 },
+                { target: 'sum', count: 0 }
+            ].forEach(function (output) {
+                var first = output.target === 'sum' ? 0 : 1;
+                var last = output.target === 'sum' ? 0 : output.count;
+                var number;
+                for (number = first; number <= last; number++) {
+                    var address = { target: output.target, num: number };
+                    key = channelKey(address);
+                    rememberChannelEqQ(address);
+                    updateFader(address, Number(state.fader[key]) || 0);
+                    updateOn(address, state.on[key]);
+                    updateName(address, state.faderName[key]);
+                    ['comp', 'eq', 'delay'].forEach(function (name) {
+                        updateEffect(address, name);
+                    });
+                }
+            });
             updateConnection('Connected', 'is-connected');
-        } else if (message.type === 'fader' && message.target === 'channel') {
-            state.fader[channelKey(message.num)] = message.value;
-            updateFader(message.num, message.value);
-            updatePairedFader(message.num, message.value);
-        } else if (message.type === 'on' && message.target === 'channel') {
-            state.on[channelKey(message.num)] = message.value;
-            updateOn(message.num, message.value);
-            updatePairedOn(message.num, message.value);
+        } else if (message.type === 'fader' &&
+            ['channel', 'aux', 'bus', 'sum'].indexOf(message.target) !== -1) {
+            var faderAddress = { target: message.target, num: message.num };
+            state.fader[channelKey(faderAddress)] = message.value;
+            updateFader(faderAddress, message.value);
+            if (message.target === 'channel') updatePairedFader(message.num, message.value);
+        } else if (message.type === 'on' &&
+            ['channel', 'aux', 'bus', 'sum'].indexOf(message.target) !== -1) {
+            var onAddress = { target: message.target, num: message.num };
+            state.on[channelKey(onAddress)] = message.value;
+            updateOn(onAddress, message.value);
+            if (message.target === 'channel') updatePairedOn(message.num, message.value);
         } else if (message.type === 'faderPair' && message.target === 'channel') {
             state.faderPair[channelKey(message.num)] = message.value;
-        } else if (message.type === 'faderName' && message.target === 'channel') {
-            state.faderName[channelKey(message.num)] = message.value;
-            updateName(message.num, message.value);
-        } else if (message.type === 'faderEffect' && message.faderType === 'channel') {
-            key = channelKey(message.num);
+        } else if (message.type === 'faderName' &&
+            ['channel', 'aux', 'bus', 'sum'].indexOf(message.target) !== -1) {
+            var nameAddress = { target: message.target, num: message.num };
+            state.faderName[channelKey(nameAddress)] = message.value;
+            updateName(nameAddress, message.value);
+        } else if (message.type === 'faderEffect') {
+            var effectAddress = {
+                target: message.faderType || 'channel',
+                num: message.faderType === 'sum' ? 0 : message.num
+            };
+            key = channelKey(effectAddress);
             effect = message.target;
             if (!state.faderEffect[effect]) state.faderEffect[effect] = {};
             if (!state.faderEffect[effect][message.prop]) state.faderEffect[effect][message.prop] = {};
             state.faderEffect[effect][message.prop][key] = message.value;
-            if (effect === 'main' && message.prop === 'Pan') {
+            if (effectAddress.target === 'channel' && effect === 'main' && message.prop === 'Pan') {
                 updatePan(message.num, Number(message.value) || 0);
             } else if (message.prop === 'On') {
-                updateEffect(message.num, effect);
-                if (effect === activePopupEffect && message.num === activePopupChannel) updateEffectOnButton();
+                updateEffect(effectAddress, effect);
+                if (effect === activePopupEffect && sameStrip(effectAddress, activePopupChannel)) updateEffectOnButton();
             }
             if (effect === 'eq' && /Q$/.test(message.prop)) {
-                rememberEqQ(message.prop, message.num, Number(message.value));
+                rememberEqQ(message.prop, effectAddress, Number(message.value));
             }
-            updateEffectParameterControl(effect, message.prop, message.num);
+            updateEffectParameterControl(effect, message.prop, effectAddress);
             if (effect === 'eq' && (message.prop === 'HPFOn' || message.prop === 'LPFOn') &&
-                effect === activePopupEffect && message.num === activePopupChannel) {
+                effect === activePopupEffect && sameStrip(effectAddress, activePopupChannel)) {
                 renderEffectFields();
             }
             if (effect === 'gate' && message.prop === 'KeyIn' &&
-                effect === activePopupEffect && message.num === activePopupChannel) {
+                effect === activePopupEffect && sameStrip(effectAddress, activePopupChannel)) {
                 renderEffectFields();
             }
-            if (effect === 'comp' && message.prop === 'Type' && effect === activePopupEffect && message.num === activePopupChannel) {
+            if (effect === 'comp' && message.prop === 'Type' && effect === activePopupEffect &&
+                sameStrip(effectAddress, activePopupChannel)) {
                 renderEffectFields();
             }
         } else if (message.type === 'level') {
@@ -991,9 +1286,16 @@
     }
 
     document.getElementById('connection-open-button').addEventListener('click', function () {
+        floatingMasterToggle.checked = showFloatingMaster;
         connectionDialog.hidden = false;
         connectionFeedback.textContent = '';
         send({ type: 'connection_info' });
+    });
+
+    floatingMasterToggle.addEventListener('change', function () {
+        showFloatingMaster = floatingMasterToggle.checked;
+        window.localStorage.setItem('showFloatingMasterFader', String(showFloatingMaster));
+        applyFloatingMasterPreference();
     });
 
     document.getElementById('connection-cancel-button').addEventListener('click', function () {
@@ -1073,17 +1375,41 @@
         panDialog.hidden = true;
     });
 
+    effectValueForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var value = parseParameterInput(activeValueDefinition, effectValueInput.value, activeValueChannel);
+        if (value === null) {
+            effectValueError.textContent = 'Enter a valid value within the allowed range.';
+            effectValueInput.focus();
+            return;
+        }
+        sendEffectParameter(activeValueChannel, activeValueEffect, activeValueDefinition.name, value);
+        effectValueDialog.hidden = true;
+    });
+
+    document.getElementById('effect-value-cancel').addEventListener('click', function () {
+        effectValueDialog.hidden = true;
+    });
+
+    effectValueDialog.addEventListener('click', function (event) {
+        if (event.target === effectValueDialog) effectValueDialog.hidden = true;
+    });
+
     effectOnButton.addEventListener('click', function () {
         var next = parameterValue(activePopupEffect, 'On', activePopupChannel) ? 0 : 1;
         sendEffectParameter(activePopupChannel, activePopupEffect, 'On', next);
     });
 
     document.getElementById('effect-close-button').addEventListener('click', function () {
+        effectValueDialog.hidden = true;
         effectDialog.hidden = true;
     });
 
     effectDialog.addEventListener('click', function (event) {
-        if (event.target === effectDialog) effectDialog.hidden = true;
+        if (event.target === effectDialog) {
+            effectValueDialog.hidden = true;
+            effectDialog.hidden = true;
+        }
     });
 
     window.addEventListener('keydown', function (event) {
@@ -1093,10 +1419,33 @@
         }
         if (event.key === 'Escape' && !nameDialog.hidden) nameDialog.hidden = true;
         if (event.key === 'Escape' && !panDialog.hidden) panDialog.hidden = true;
+        if (event.key === 'Escape' && !effectValueDialog.hidden) effectValueDialog.hidden = true;
         if (event.key === 'Escape' && !effectDialog.hidden) effectDialog.hidden = true;
     });
 
+    inputsTab.addEventListener('click', function () {
+        channelBank.hidden = false;
+        outputBank.hidden = true;
+        inputsTab.classList.add('is-selected');
+        outputsTab.classList.remove('is-selected');
+        inputsTab.setAttribute('aria-pressed', 'true');
+        outputsTab.setAttribute('aria-pressed', 'false');
+        fitFaders();
+    });
+
+    outputsTab.addEventListener('click', function () {
+        channelBank.hidden = true;
+        outputBank.hidden = false;
+        inputsTab.classList.remove('is-selected');
+        outputsTab.classList.add('is-selected');
+        inputsTab.setAttribute('aria-pressed', 'false');
+        outputsTab.setAttribute('aria-pressed', 'true');
+        fitFaders();
+    });
+
     renderChannels();
+    renderOutputChannels();
+    applyFloatingMasterPreference();
     fitFaders();
     window.addEventListener('resize', fitFaders);
     window.addEventListener('orientationchange', fitFaders);
