@@ -150,6 +150,10 @@ export function createMixerRequests(config: MixerConfig, status: MixerStatus, de
 
     };
 
+    const sendChannelPanRequest = function (channel: number) {
+        device.send(config.parameterRequest([config.sysExElements.channelPan, 0, channel - 1]));
+    };
+
     const sendSyncRequest = function () {
         let i, j, limit, auxSendParam;
         for (i in config.sysExElements) {
@@ -212,5 +216,5 @@ export function createMixerRequests(config: MixerConfig, status: MixerStatus, de
 
     };
 
-        return { sendRemoteMeterRequest, sendFaderNameRequest, sendAuxNameRequest, sendBusNameRequest, sendSumNameRequest, sendChannelEffectRequest, sendSyncRequest };
+        return { sendRemoteMeterRequest, sendFaderNameRequest, sendAuxNameRequest, sendBusNameRequest, sendSumNameRequest, sendChannelEffectRequest, sendChannelPanRequest, sendSyncRequest };
 }

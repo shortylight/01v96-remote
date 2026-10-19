@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import type { Application } from "../types";
 import type { MixerDevice, MixerStatus } from "./mixer-types";
 import { config } from "./mixer-config";
@@ -6,49 +9,255 @@ import { createClientMessageHandler } from "./mixer-client-messages";
 import { createMixerCommands } from "./mixer-commands";
 import { createMixerRequests } from "./mixer-requests";
 
+type DeviceWithLifecycle = MixerDevice & { close?: () => void };
+type MidiDeviceModule = MixerDevice & {
+    listPorts(): string[];
+    open(portName: string): void;
+    close(): void;
+};
+type ConnectionMode = "midi" | "dummy" | "serialport";
+type ConnectionSettings = { mode: ConnectionMode; portName: string | null };
+
 let app: Application,
-    device: MixerDevice;
+    activeDevice: DeviceWithLifecycle | undefined,
+    deviceListener: ((message: number[]) => void) | undefined,
+    requestMixerState: (() => void) | undefined,
+    connection: ConnectionSettings = { mode: "midi", portName: null },
+    connectionError: string | null = null;
+
+const device: MixerDevice = {
+    setListener: function(listener) {
+        deviceListener = listener;
+        activeDevice?.setListener(listener);
+    },
+    send: function(message) {
+        activeDevice?.send(message);
+    }
+};
+
+const settingsPath = path.join(
+    process.env.APPDATA || path.join(os.homedir(), ".config"),
+    "01v96-remote",
+    "connection.json"
+);
+
+function readSettings(): ConnectionSettings | undefined {
+    try {
+        const saved = JSON.parse(fs.readFileSync(settingsPath, "utf8")) as Partial<ConnectionSettings>;
+        if (saved.mode === "midi" || saved.mode === "dummy" || saved.mode === "serialport") {
+            return { mode: saved.mode, portName: typeof saved.portName === "string" ? saved.portName : null };
+        }
+        console.log("[mixer] Ignoring invalid saved connection settings");
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+            console.log("[mixer] Could not load connection settings:", error);
+        }
+    }
+    return undefined;
+}
+
+function saveSettings(settings: ConnectionSettings): void {
+    try {
+        fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+    } catch (error) {
+        console.log("[mixer] Could not save connection settings:", error);
+        throw error;
+    }
+}
+
+function startupSettings(): { settings: ConnectionSettings; explicit: boolean } {
+    const args = process.argv.slice(2);
+    const saved = readSettings();
+    let mode = saved?.mode || "midi";
+    let portName = saved?.portName || null;
+    let explicit = false;
+
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        if (arg === "--mode" && args[i + 1]) {
+            mode = args[++i] as ConnectionMode;
+            explicit = true;
+            portName = null;
+        } else if (arg.startsWith("--mode=")) {
+            mode = arg.slice("--mode=".length) as ConnectionMode;
+            explicit = true;
+            portName = null;
+        } else if ((arg === "--midi-port" || arg === "--port") && args[i + 1]) {
+            mode = "midi";
+            portName = args[++i];
+            explicit = true;
+        } else if (arg === "midi" || arg === "dummy" || arg === "serialport") {
+            mode = arg;
+            explicit = true;
+            portName = null;
+            if (mode === "midi" && args[i + 1] && !args[i + 1].startsWith("--")) {
+                portName = args[++i];
+            }
+        }
+    }
+
+    if (mode !== "midi" && mode !== "dummy" && mode !== "serialport") {
+        console.log("[mixer] Invalid connection mode; using MIDI");
+        mode = "midi";
+        portName = null;
+    }
+    return { settings: { mode, portName }, explicit };
+}
+
+function midiModule(): MidiDeviceModule {
+    return require("../modules/mixer_midi") as MidiDeviceModule;
+}
+
+function listMidiPorts(): string[] {
+    try {
+        return midiModule().listPorts();
+    } catch (error) {
+        connectionError = String(error);
+        console.log("[mixer] Could not enumerate MIDI ports:", error);
+        return [];
+    }
+}
+
+function availableModes(): ConnectionMode[] {
+    const modes: ConnectionMode[] = ["midi", "dummy"];
+    if (process.platform !== "win32" && fs.existsSync("/dev/ttyAMA0")) modes.push("serialport");
+    return modes;
+}
+
+function setConnection(settings: ConnectionSettings): void {
+    if (!availableModes().includes(settings.mode)) {
+        throw new Error("The selected connection mode is not available on this system");
+    }
+    if (settings.mode === "midi" && !settings.portName) {
+        throw new Error("Select a detected 01V96 MIDI port");
+    }
+
+    const previousDevice = activeDevice;
+    activeDevice = undefined;
+    previousDevice?.close?.();
+
+    if (settings.mode === "midi") {
+        const midi = midiModule();
+        midi.setListener(deviceListener || (() => undefined));
+        midi.open(settings.portName!);
+        activeDevice = midi;
+        console.log("[mixer] Using standard MIDI controller");
+    } else if (settings.mode === "dummy") {
+        const dummyModule = require("../modules/mixer_dummy") as {
+            create(): DeviceWithLifecycle;
+        };
+        activeDevice = dummyModule.create();
+        activeDevice.setListener(deviceListener || (() => undefined));
+        console.log("[mixer] Using MIDI test dummy");
+    } else {
+        const serialModule = require("../modules/mixer_serialport") as {
+            create(): DeviceWithLifecycle;
+        };
+        activeDevice = serialModule.create();
+        activeDevice.setListener(deviceListener || (() => undefined));
+        console.log("[mixer] Using MIDI serial port adapter");
+    }
+
+    connection = settings;
+    connectionError = null;
+    requestMixerState?.();
+}
+
+function connectionInfo() {
+    return {
+        type: "connection",
+        mode: connection.mode,
+        portName: connection.portName,
+        connected: !!activeDevice,
+        modes: availableModes(),
+        ports: listMidiPorts(),
+        error: connectionError
+    };
+}
+
+function connectionMessageHandler(message: any, socket: any): void {
+    if (message.type === "connection_info") {
+        app.controllers.socket.send(socket, connectionInfo());
+    } else if (message.type === "connection_select") {
+        const previousConnection = connection;
+        const previousDevice = activeDevice;
+        try {
+            if (message.mode !== "midi" && message.mode !== "dummy" && message.mode !== "serialport") {
+                throw new Error("Invalid connection mode");
+            }
+            const settings: ConnectionSettings = {
+                mode: message.mode,
+                portName: typeof message.portName === "string" ? message.portName : null
+            };
+            setConnection(settings);
+            saveSettings(connection);
+            app.controllers.socket.broadcast(connectionInfo());
+        } catch (error) {
+            connectionError = error instanceof Error ? error.message : String(error);
+            console.log("[mixer] Could not change connection:", error);
+            if (connection !== previousConnection || activeDevice !== previousDevice) {
+                app.controllers.socket.broadcast(connectionInfo());
+            }
+            app.controllers.socket.send(socket, connectionInfo());
+        }
+    }
+}
 
 
 const init = function () {
 
-    switch (process.argv[2]) {
-
-        // MIDI over serial port, e.g. on the Raspberry Pi
-        case 'serialport':
-            console.log('[mixer] Using MIDI serial port adapter');
-            device = require('../modules/mixer_serialport');
-            break;
-
-        // test dummy
-        case 'dummy':
-            console.log('[mixer] Using MIDI test dummy');
-            device = require('../modules/mixer_dummy');
-            break;
-
-        // standard MIDI interface
-        default:
-            console.log('[mixer] Using standard MIDI controller');
-            console.log('[mixer] Using port ' + process.argv[3]);
-            device = require('../modules/mixer_midi');
-
+    const startup = startupSettings();
+    try {
+        if (startup.settings.mode === "midi" && !startup.settings.portName) {
+            connection = startup.settings;
+            console.log("[mixer] Using standard MIDI controller");
+            console.log("[mixer] No MIDI console selected");
+            if (startup.explicit) saveSettings(connection);
+        } else {
+            setConnection(startup.settings);
+            if (startup.explicit) saveSettings(connection);
+        }
+    } catch (error) {
+        connectionError = error instanceof Error ? error.message : String(error);
+        console.log("[mixer] Could not start selected connection:", error);
     }
 
     const commands = createMixerCommands(config, status, device);
     const requests = createMixerRequests(config, status, device);
+    requestMixerState = function() {
+        requests.sendFaderNameRequest();
+        requests.sendAuxNameRequest();
+        requests.sendBusNameRequest();
+        requests.sendSumNameRequest();
+        requests.sendRemoteMeterRequest();
+        requests.sendSyncRequest();
+    };
 
     device.setListener(createDeviceMessageHandler(app, config, status, requests.sendSyncRequest));
     app.controllers.socket.addListener(
-        createClientMessageHandler(app, config, status, commands, requests.sendChannelEffectRequest)
+        createClientMessageHandler(
+            app,
+            config,
+            status,
+            commands,
+            requests.sendChannelEffectRequest,
+            requests.sendChannelPanRequest
+        )
     );
+    app.controllers.socket.addListener(connectionMessageHandler);
 
+
+    fillStatus();
+
+    // request input names before the rest of the mixer state
+    requests.sendFaderNameRequest();
 
     // periodical remote meter request
     requests.sendRemoteMeterRequest();
     setInterval(requests.sendRemoteMeterRequest, 10000);
 
     // periodical channel, aux, bus name request (charwise)
-    requests.sendFaderNameRequest();
     setInterval(requests.sendFaderNameRequest, config.remoteNameInterval);
     requests.sendAuxNameRequest();
     setInterval(requests.sendAuxNameRequest, config.remoteNameInterval);
@@ -58,7 +267,6 @@ const init = function () {
     setInterval(requests.sendSumNameRequest, config.remoteNameInterval);
 
     // periodical sync request
-    fillStatus();
     requests.sendSyncRequest();
     setInterval(requests.sendSyncRequest, 17000);
 

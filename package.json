@@ -4,6 +4,7 @@
   "author": "Michael Strobel",
   "license": "MIT",
   "main": "dist/server.js",
+  "bin": "dist/server.js",
   "description": "WebSocket-MIDI bridge for Yamaha 01v96 Edit",
   "homepage": "https://github.com/kryops/01v96-remote",
   "bugs": "https://github.com/kryops/01v96-remote/issues",
@@ -14,19 +15,34 @@
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node dist/server.js",
+    "package:win": "npm run build && node -e \"require('fs').mkdirSync('build', { recursive: true })\" && pkg . --targets node22-win-x64 --output build/01v96-remote.exe",
     "lint": "eslint server.ts \"server/**/*.ts\""
   },
   "dependencies": {
     "@julusian/midi": "^3.8.1",
-    "node-static": "^0.7.11",
     "ws": "^7.4.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.5",
+    "@yao-pkg/pkg": "^6.23.0",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.2"
+  },
+  "pkg": {
+    "scripts": [
+      "dist/server.js",
+      "dist/server/controllers/*.js",
+      "dist/server/modules/events.js",
+      "dist/server/modules/mixer_dummy.js",
+      "dist/server/modules/mixer_midi.js"
+    ],
+    "assets": [
+      "client/**/*",
+      "client-modern/**/*",
+      "node_modules/@julusian/midi/prebuilds/**/*.node"
+    ]
   }
 }

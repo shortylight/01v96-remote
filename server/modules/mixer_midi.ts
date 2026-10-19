@@ -1,82 +1,95 @@
-﻿const midi = require('@julusian/midi')
+import midi = require("@julusian/midi");
 
-const input = new midi.Input();
-const output = new midi.Output();
-let listener: ((message: number[]) => void) | false = false;
-const inputPortCount = input.getPortCount();
-const outputPortCount = output.getPortCount();
-let foundInputPort = false;
-let foundOutputPort = false;
-let i;
-
-const matchPortName = function(name: string) {
-    return (name.toLowerCase().indexOf('01v96') !== -1 || name.match(/01V96 ..:0/i));
+type MidiPort = {
+    name: string;
+    inputIndex: number;
+    outputIndex: number;
 };
 
-const transmitMessage = function(deltaTime: number, message: number[]) {
-    if(listener) {
-        listener(message);
+let input: midi.Input | undefined;
+let output: midi.Output | undefined;
+let listener: ((message: number[]) => void) | undefined;
+
+function findPorts(): MidiPort[] {
+    const ports: MidiPort[] = [];
+    const probeInput = new midi.Input();
+    const probeOutput = new midi.Output();
+
+    try {
+        for (let inputIndex = 0; inputIndex < probeInput.getPortCount(); inputIndex++) {
+            const name = probeInput.getPortName(inputIndex);
+            if (!/01v96/i.test(name)) continue;
+
+            for (let outputIndex = 0; outputIndex < probeOutput.getPortCount(); outputIndex++) {
+                if (probeOutput.getPortName(outputIndex) === name) {
+                    ports.push({ name, inputIndex, outputIndex });
+                    break;
+                }
+            }
+        }
+    } finally {
+        probeInput.destroy();
+        probeOutput.destroy();
     }
-};
 
-input.on('message', transmitMessage);
+    return ports;
+}
 
-// find input port
+function close(): void {
+    if (input) {
+        input.removeAllListeners("message");
+        if (input.isPortOpen()) input.closePort();
+        input.destroy();
+        input = undefined;
+    }
 
-for(i = 0; i < inputPortCount; i++) {
-    if(matchPortName(input.getPortName(i))) {
-
-        console.log('[mixer_midi] MIDI input port ' + i + ' / ' + input.getPortName(i));
-
-        input.openPort(i);
-
-        foundInputPort = true;
-
-        // enable Sysex, timing and active sensing
-        input.ignoreTypes(false, false, false);
-
-        break;
+    if (output) {
+        if (output.isPortOpen()) output.closePort();
+        output.destroy();
+        output = undefined;
     }
 }
-
-if(!foundInputPort) {
-    console.log('[mixer_midi] ERROR: No 01v96 device found! (input port)');
-}
-
-
-// find output port
-
-for(i = 0; i < outputPortCount; i++) {
-    if(matchPortName(output.getPortName(i))) {
-
-        console.log('[mixer_midi] MIDI output port ' + i + ' / ' + output.getPortName(i));
-
-        output.openPort(i);
-
-        foundOutputPort = true;
-
-        break;
-    }
-    console.log('[mixer_midi] MIDI output port ' + i + ' / ' + output.getPortName(i) + ' does not match.');
-}
-
-if(!foundOutputPort) {
-    console.log('[mixer_midi] ERROR: No 01v96 device found! (output port)');
-}
-
-
-export {};
 
 module.exports = {
-    
-    setListener: function(l: (message: number[]) => void) {
-        listener = l;
+    listPorts: function() {
+        return findPorts().map((port) => port.name);
     },
-    
-    send: function(message: number[]) {
-        if(foundOutputPort) {
-            output.sendMessage(message);
+
+    open: function(portName: string): void {
+        const port = findPorts().find((candidate) => candidate.name === portName);
+        if (!port) {
+            throw new Error("The selected 01V96 MIDI input/output pair is not available");
         }
+
+        close();
+        const nextInput = new midi.Input();
+        const nextOutput = new midi.Output();
+
+        try {
+            nextInput.ignoreTypes(false, false, false);
+            nextInput.on("message", (_deltaTime, message) => listener?.(message));
+            nextInput.openPort(port.inputIndex);
+            nextOutput.openPort(port.outputIndex);
+            input = nextInput;
+            output = nextOutput;
+            console.log("[mixer_midi] MIDI input port " + port.inputIndex + " / " + port.name);
+            console.log("[mixer_midi] MIDI output port " + port.outputIndex + " / " + port.name);
+        } catch (error) {
+            if (nextInput.isPortOpen()) nextInput.closePort();
+            if (nextOutput.isPortOpen()) nextOutput.closePort();
+            nextInput.destroy();
+            nextOutput.destroy();
+            throw error;
+        }
+    },
+
+    close: close,
+
+    setListener: function(nextListener: (message: number[]) => void) {
+        listener = nextListener;
+    },
+
+    send: function(message: number[]) {
+        if (output?.isPortOpen()) output.sendMessage(message);
     }
-    
 };

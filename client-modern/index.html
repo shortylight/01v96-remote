@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#15191d">
+    <title>01v96 Remote - Channel Strips</title>
+    <link rel="stylesheet" href="css/main.css">
+    <script defer src="js/main.js"></script>
+</head>
+<body>
+    <header class="app-header">
+        <h1>01v96 Remote</h1>
+        <div id="connection-status" class="connection-status" role="status" aria-live="polite">
+            Connecting…
+        </div>
+        <button id="connection-open-button" class="connection-open-button" type="button">MIXER</button>
+    </header>
+    <main id="channel-bank" class="channel-bank" aria-label="Input channels"></main>
+    <div id="connection-dialog" class="dialog-backdrop" hidden>
+        <form id="connection-form" class="connection-dialog" role="dialog" aria-modal="true" aria-labelledby="connection-dialog-title">
+            <h2 id="connection-dialog-title">Mixer connection</h2>
+            <p id="connection-current" class="connection-current">Checking connection…</p>
+            <label for="connection-mode">Connection type</label>
+            <select id="connection-mode" name="mode"></select>
+            <div id="midi-port-field">
+                <label for="midi-port">Detected 01V96 console</label>
+                <select id="midi-port" name="portName"></select>
+            </div>
+            <p id="connection-feedback" class="connection-feedback" role="status" aria-live="polite"></p>
+            <div class="dialog-actions">
+                <button id="connection-cancel-button" type="button" class="dialog-cancel">Close</button>
+                <button type="submit" class="dialog-save">Connect</button>
+            </div>
+        </form>
+    </div>
+    <div id="name-dialog" class="dialog-backdrop" hidden>
+        <form id="name-form" class="name-dialog" role="dialog" aria-modal="true" aria-labelledby="name-dialog-title">
+            <h2 id="name-dialog-title">Channel name</h2>
+            <label for="channel-name-input">Name</label>
+            <input id="channel-name-input" name="name" maxlength="8" autocomplete="off">
+            <div class="dialog-actions">
+                <button type="button" class="dialog-cancel">Cancel</button>
+                <button type="submit" class="dialog-save">Save</button>
+            </div>
+        </form>
+    </div>
+    <div id="pan-dialog" class="dialog-backdrop" hidden>
+        <form id="pan-form" class="pan-dialog" role="dialog" aria-modal="true" aria-labelledby="pan-dialog-title">
+            <h2 id="pan-dialog-title">Channel pan</h2>
+            <output id="pan-dialog-value" for="pan-value-input">C</output>
+            <label class="visually-hidden" for="pan-value-input">Pan position</label>
+            <input id="pan-value-input" type="range" min="-63" max="63" step="1" value="0">
+            <div class="dialog-actions">
+                <button id="pan-cancel-button" type="button" class="dialog-cancel">Cancel</button>
+                <button id="pan-center-button" type="button" class="dialog-cancel">Center</button>
+                <button type="submit" class="dialog-save">Done</button>
+            </div>
+        </form>
+    </div>
+    <div id="effect-dialog" class="dialog-backdrop" hidden>
+        <section class="effect-dialog" role="dialog" aria-modal="true" aria-labelledby="effect-dialog-title">
+            <div class="effect-dialog-header">
+                <h2 id="effect-dialog-title"></h2>
+                <button id="effect-on-button" type="button" class="effect-on-button" role="switch" aria-checked="false">OFF</button>
+            </div>
+            <div id="effect-fields" class="effect-fields"></div>
+            <div class="dialog-actions">
+                <button id="effect-close-button" type="button" class="dialog-cancel">Done</button>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

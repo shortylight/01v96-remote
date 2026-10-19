@@ -87,6 +87,19 @@ From Windows you can start it with the *01v96-remote-server.bat* file.
 
 The program can only be started when the 01v96 is connected, running and configured correctly. MIDI error messages are shown in the console output.
 
+### Standalone Windows executable
+
+On Windows, install the project dependencies and build the bundled CLI executable:
+
+	npm install
+	npm run package:win
+
+The executable is written to `build/01v96-remote.exe`. It includes the Node.js runtime, server dependencies, both web clients, and the Windows MIDI native binary. Run it from a command prompt; it prints the channel-strip client URL and keeps the server diagnostics visible. Open that URL from this PC or another device on the same network.
+
+Use `01v96-remote.exe --mode dummy` to start the test mixer, or `01v96-remote.exe --mode midi --midi-port "01V96 MIDI"` to select a detected MIDI console at startup. The connection selected in the channel-strip client's **MIXER** dialog is saved in `%APPDATA%\01v96-remote\connection.json` and restored on later launches when no startup option overrides it. For MIDI, the device must expose matching 01V96 input and output port names.
+
+The Windows executable offers MIDI and dummy modes. The serial-port adapter remains limited to supported Raspberry Pi/Linux installations.
+
 With an optional parameter, the connection type to the mixer can be chosen:
 
 -   **midi** *(default)* uses the standard MIDI protocol - for MIDI ports and USB connections (also on Raspberry Pi - thanks to @Shad-Rydalch)
@@ -94,9 +107,9 @@ With an optional parameter, the connection type to the mixer can be chosen:
 -   **dummy** allows to test the application without a real mixer present. It simulates changing fader levels and a moving fader
 
 
-### Web client
+### Web clients
 
-The web client can be accessed at port 1337. You have to use a browser that supports WebSockets. Look up browser support at [http://caniuse.com/websockets](http://caniuse.com/websockets).
+The existing web client can be accessed at port 1337. The lightweight channel-strip client is available at port 1339 and is designed for touch use in Safari on a 9th-generation iPad. Both clients connect to the WebSocket service on port 1338. Look up browser support at [http://caniuse.com/websockets](http://caniuse.com/websockets).
 
 
 ## Development
@@ -255,7 +268,6 @@ Channel groups: Has to be send only for one channel. Broadcast to other clients 
 NPM modules
 
 -   uws - https://github.com/uWebSockets/uWebSockets
--   node-static - https://github.com/cloudhead/node-static
 -   midi - https://github.com/justinlatimer/node-midi
 -   serialport - https://github.com/voodootikigod/node-serialport
 

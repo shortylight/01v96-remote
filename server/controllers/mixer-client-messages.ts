@@ -7,9 +7,17 @@ export function createClientMessageHandler(
     config: MixerConfig,
     status: MixerStatus,
     commands: ReturnType<typeof createMixerCommands>,
-    sendChannelEffectRequest: (channel: number, type: string) => void
+    sendChannelEffectRequest: (channel: number, type: string) => void,
+    sendChannelPanRequest: (channel: number) => void
 ) {
     const { setChannelFader, setChannelOn, setFaderEffect, setName, setSumFader, setSumOn, setAuxSendFader, setAuxFader, setAuxOn, setBusFader, setBusOn } = commands;
+    const pairedChannel = function(channel: number) {
+        const partner = channel % 2 ? channel + 1 : channel - 1;
+        return partner <= config.channelCount &&
+            (status.faderPair["channel" + channel] == 1 ||
+                status.faderPair["channel" + partner] == 1) ?
+            partner : 0;
+    };
 
     return function clientMessageHandler(message: any, socket: any) {
         let i, j, groupId, pairNum, pairAux;
@@ -78,7 +86,56 @@ export function createClientMessageHandler(
             break;
 
             // control effect settings
-            case "faderEffect":
+            case "faderEffect": {
+                const effectValues = typeof message.effect === "string" ?
+                    status.faderEffect[message.effect] : undefined;
+                const propertyValues = effectValues && typeof message.prop === "string" ?
+                    effectValues[message.prop] : undefined;
+                const targetLimit = message.target === "channel" ? config.channelCount :
+                    message.target === "bus" ? config.busCount :
+                    message.target === "aux" ? config.auxCount :
+                    message.target === "sum" ? 0 : undefined;
+                let effectElement: number | undefined;
+
+                if (message.target === "channel" && message.effect === "main") {
+                    effectElement = message.prop === "Pan" ? config.sysExElements.channelPan :
+                        message.prop === "Phase" ? config.sysExElements.channelPhase :
+                        config.sysExElements.channelRouting;
+                } else if (message.target === "channel") {
+                    effectElement = config.sysExElements.channelEffect[message.effect];
+                } else if (message.target === "sum") {
+                    effectElement = message.prop === "Pan" ? config.sysExElements.sumPan :
+                        config.sysExElements.sumEffect[message.effect];
+                } else if (message.target === "bus") {
+                    effectElement = message.prop === "Pan" ? config.sysExElements.busPan :
+                        config.sysExElements.busEffect[message.effect];
+                } else if (message.target === "aux") {
+                    effectElement = message.prop === "Pan" ? config.sysExElements.auxPan :
+                        config.sysExElements.auxEffect[message.effect];
+                }
+
+                if (
+                    targetLimit === undefined ||
+                    !Number.isInteger(message.num) ||
+                    message.num < (message.target === "sum" ? 0 : 1) ||
+                    message.num > targetLimit ||
+                    !effectValues ||
+                    !propertyValues ||
+                    typeof propertyValues !== "object" ||
+                    effectElement === undefined ||
+                    (typeof message.value !== "number" && typeof message.value !== "boolean") ||
+                    (typeof message.value === "number" && !Number.isFinite(message.value))
+                ) {
+                    console.log("[mixer] Ignoring invalid faderEffect message:", {
+                        target: message.target,
+                        num: message.num,
+                        effect: message.effect,
+                        prop: message.prop,
+                        value: message.value
+                    });
+                    break;
+                }
+
                 if (message.target == "channel") {
                     if (message.effect == "main") {
                         if( message.prop == "Pan") {
@@ -119,12 +176,25 @@ export function createClientMessageHandler(
                 status.faderEffect[message.effect][message.prop][message.target + message.num] = message.value;
 
                 break;
+            }
 
             case "syncEffect":
 
                 sendChannelEffectRequest(message.num, message.target);
 
                 break;
+
+            case "syncPan": {
+                if (!Number.isInteger(message.num) || message.num < 1 || message.num > config.channelCount) {
+                    console.log("[mixer] Invalid channel number " + message.num + " (pan sync)");
+                    break;
+                }
+
+                sendChannelPanRequest(message.num);
+                const panPartner = message.num % 2 ? message.num + 1 : message.num - 1;
+                if (panPartner <= config.channelCount) sendChannelPanRequest(panPartner);
+                break;
+            }
 
             case "sync":
 
@@ -144,20 +214,34 @@ export function createClientMessageHandler(
 
             if (message.target === 'channel' || message.target === 'auxsend' || message.target === 'aux' || message.target === 'bus') {
                 // pairing partner has to be transferred
-                if(status.faderPair && status.faderPair[message.target + message.num] == 1) {
-                    if (message.num % 2){
-                        pairNum = parseInt(message.num) + 1;
-                    } else {
-                        pairNum = parseInt(message.num) - 1;
+                pairNum = message.target === 'channel' ?
+                    pairedChannel(Number(message.num)) : 0;
+                if (pairNum || (message.target !== 'channel' &&
+                    status.faderPair && status.faderPair[message.target + message.num] == 1)) {
+                    if (!pairNum) {
+                        if (message.num % 2){
+                            pairNum = parseInt(message.num) + 1;
+                        } else {
+                            pairNum = parseInt(message.num) - 1;
+                        }
                     }
-                    // pairing of channels inside of a tab
-                    app.controllers.socket.broadcastToOthers(socket, {
+                    if (message.target === 'channel') {
+                        if (message.type === 'fader') {
+                            status.fader['channel' + pairNum] = message.value;
+                        } else {
+                            status.on['channel' + pairNum] = message.value;
+                        }
+                    }
+                    // Keep the initiating client and other clients in sync.
+                    const pairedMessage = {
                         type: message.type,
                         target: message.target,
                         num: pairNum,
                         num2: message.num2,
                         value: message.value
-                    });
+                    };
+                    app.controllers.socket.send(socket, pairedMessage);
+                    app.controllers.socket.broadcastToOthers(socket, pairedMessage);
                     // pairing of channels in paired aux tabs
                     if(message.target === 'auxsend'){
                         pairAux = message.num2 % 2 ? 1 : -1;

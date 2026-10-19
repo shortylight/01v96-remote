@@ -6,6 +6,7 @@ export interface ClientConfig {
 export interface Application {
     config: {
         staticPort: number;
+        channelStripPort: number;
         webSocketPort: number;
     };
     clientConfig: ClientConfig;
