@@ -401,6 +401,10 @@ export function createDeviceMessageHandler(
                         break;
 
                     case config.sysExElements.channelPair:
+                        if (message[7] !== 0) {
+                            break;
+                        }
+
                         num = message[8] + 1;
                         value = config.data2Value(message.slice(9));
                         status.faderPair['channel' + num] = value;
@@ -409,7 +413,7 @@ export function createDeviceMessageHandler(
                             type: 'faderPair',
                             target: "channel",
                             num: num,
-                            prop: Object.keys(status.faderPair)[message[7]],
+                            prop: 'Pair',
                             value: value
                         };
 

@@ -154,6 +154,19 @@ export function createMixerRequests(config: MixerConfig, status: MixerStatus, de
         device.send(config.parameterRequest([config.sysExElements.channelPan, 0, channel - 1]));
     };
 
+    const sendChannelPairRequests = function () {
+        let channel = 0;
+        const requestNextChannel = function () {
+            device.send(config.parameterRequest([config.sysExElements.channelPair, 0, channel]));
+            channel++;
+            if (channel < config.channelCount) {
+                setTimeout(requestNextChannel, 130);
+            }
+        };
+
+        setTimeout(requestNextChannel, 1000);
+    };
+
     const sendSyncRequest = function () {
         let i, j, limit, auxSendParam;
         for (i in config.sysExElements) {
@@ -216,5 +229,5 @@ export function createMixerRequests(config: MixerConfig, status: MixerStatus, de
 
     };
 
-        return { sendRemoteMeterRequest, sendFaderNameRequest, sendAuxNameRequest, sendBusNameRequest, sendSumNameRequest, sendChannelEffectRequest, sendChannelPanRequest, sendSyncRequest };
+        return { sendRemoteMeterRequest, sendFaderNameRequest, sendAuxNameRequest, sendBusNameRequest, sendSumNameRequest, sendChannelEffectRequest, sendChannelPanRequest, sendChannelPairRequests, sendSyncRequest };
 }

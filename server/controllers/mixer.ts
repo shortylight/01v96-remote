@@ -269,6 +269,8 @@ const init = function () {
     // periodical sync request
     requests.sendSyncRequest();
     setInterval(requests.sendSyncRequest, 17000);
+    requests.sendChannelPairRequests();
+    setInterval(requests.sendChannelPairRequests, 17000);
 
 };
 

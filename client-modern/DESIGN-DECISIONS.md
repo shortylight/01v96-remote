@@ -90,8 +90,9 @@ the bottom of its strip; the modal editor caps names at eight characters.
 - Send fader and ON changes as existing `fader` and `on` messages for target
   `channel`. When a channel is paired, mirror fader and ON changes in the
   partner strip while sending only the changed channel to the mixer. Pair
-  state is taken from the mixer and checked on both channels of each adjacent
-  pair.
+  state is taken from the mixer, requested sequentially during sync, and
+  checked on both channels of each adjacent pair. The separate `kPairMS`
+  parameter is not the channel-pair enabled flag.
 - Send pan and Gate/Comp/EQ/Delay On changes as existing `faderEffect`
   messages. Gate, Comp, EQ, and Delay popups expose the properties, ranges,
   choices, and special EQ filter side-effects defined by the legacy client.
