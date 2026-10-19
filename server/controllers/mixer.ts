@@ -447,6 +447,9 @@ const status: MixerStatus = {
             },
             On: {
                 sum0: false
+            },
+            Att: {
+                sum0: 0
             }
         },
         delay: {

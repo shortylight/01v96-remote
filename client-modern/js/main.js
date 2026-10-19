@@ -86,7 +86,8 @@
             { name: 'Link', choices: ['Off', 'On'] }
         ],
         eqTop: [
-            { name: 'Mode', choices: ['Type 1', 'Type 2'] }
+            { name: 'Mode', choices: ['Type 1', 'Type 2'] },
+            { name: 'Att', min: -960, max: 120, eqAttenuator: true, label: 'Attenuator' }
         ],
         eq: [
             { name: 'LowQ', min: 0, max: 40, eqQ: true },
@@ -251,6 +252,7 @@
     function parameterDisplay(definition, value) {
         if (definition.choices) return definition.choices[value] || String(value);
         if (definition.eqGain) return (value / 10).toFixed(1) + ' dB';
+        if (definition.eqAttenuator) return (value / 10).toFixed(1) + ' dB';
         if (definition.eqQ) return legacyTables.table11[value] || 'Code ' + value;
         if (definition.table) {
             return legacyTables[definition.table][value] || 'Code ' + value;

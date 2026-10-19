@@ -51,6 +51,7 @@ export const config: MixerConfig = {
         busOn: 41,
 
         channelPan: 27,
+        channelAttenuator: 29,
         busPan: 42,
         auxPan: 56,
         sumPan: 78,

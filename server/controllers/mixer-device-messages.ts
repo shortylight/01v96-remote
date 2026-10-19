@@ -152,6 +152,26 @@ export function createDeviceMessageHandler(
 
                         break;
 
+                    case config.sysExElements.channelAttenuator:
+                        if (message[7] !== 0) {
+                            break;
+                        }
+
+                        num = message[8] + 1;
+                        value = config.data2Value(message.slice(9));
+                        status.faderEffect['eq']['Att']['channel' + num] = value;
+
+                        outMessage = {
+                            type: 'faderEffect',
+                            target: 'eq',
+                            num: num,
+                            value: value,
+                            prop: 'Att',
+                            faderType: 'channel'
+                        };
+
+                        break;
+
                     case config.sysExElements.sumEffect['comp']:
                         num = message[8] + 1;
                         value = config.data2Value(message.slice(9));

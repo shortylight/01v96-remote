@@ -59,8 +59,9 @@ only in their control, without a duplicate selected-value readout. Config
 keeps the common parameter controls and presents Bus 1-8 as numbered routing
 buttons under a shared **Bus routing** heading.
 
-EQ begins with a Mode row, followed by four band columns: Low, Low-mid,
-High-mid, and High. Each band's Q, Frequency, and Gain sliders have labels
+EQ begins with a Mode and Attenuator row, followed by four band columns: Low,
+Low-mid, High-mid, and High. The Attenuator ranges from -96.0 dB to +12.0 dB.
+Each band's Q, Frequency, and Gain sliders have labels
 without separate row headers. The HPF and LPF buttons are placed in their Low
 and High band columns. EQ gain readouts use dB values from -18.0 dB to
 +18.0 dB. Q ranges from 10.0 to 0.10; one additional slider step selects the

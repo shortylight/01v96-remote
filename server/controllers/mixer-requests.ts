@@ -106,20 +106,25 @@ export function createMixerRequests(config: MixerConfig, status: MixerStatus, de
     };
 
     const sendChannelEffectRequest = function (channel: number, type: string) {
-        let x, j;
+        let x: string, j;
 
         // channelEffect: request for all parameters of a channel
         if (type == 'channel') {
             for (x in status.faderEffect) {
-                for (j = 0; j < Object.keys(status.faderEffect[x]).length; j++) {
+                const properties = Object.keys(status.faderEffect[x]).filter(
+                    property => x !== 'eq' || property !== 'Att'
+                );
+                for (j = 0; j < properties.length; j++) {
                     device.send(
                         config.parameterRequest([config.sysExElements.channelEffect[x], j, channel - 1])
                     )
                 };
             }
+            device.send(config.parameterRequest([config.sysExElements.channelAttenuator, 0, channel - 1]));
         } else if (type == 'bus') {
             for (x of ['comp', 'eq', 'delay']) {
-                for (j = 0; j < Object.keys(status.faderEffect[x]).length; j++) {
+                const properties = Object.keys(status.faderEffect[x]).filter(property => property !== 'Att');
+                for (j = 0; j < properties.length; j++) {
                     device.send(
                         config.parameterRequest([config.sysExElements.busEffect[x], j, channel - 1])
                     )
@@ -129,7 +134,8 @@ export function createMixerRequests(config: MixerConfig, status: MixerStatus, de
 
         } else if (type == 'aux') {
             for (x of ['comp', 'eq', 'delay']) {
-                for (j = 0; j < Object.keys(status.faderEffect[x]).length; j++) {
+                const properties = Object.keys(status.faderEffect[x]).filter(property => property !== 'Att');
+                for (j = 0; j < properties.length; j++) {
                     device.send(
                         config.parameterRequest([config.sysExElements.auxEffect[x], j, channel - 1])
                     )
@@ -139,7 +145,8 @@ export function createMixerRequests(config: MixerConfig, status: MixerStatus, de
 
         } else if (type == 'sum') {
             for (x of ['comp', 'eq', 'delay']) {
-                for (j = 0; j < Object.keys(status.faderEffect[x]).length; j++) {
+                const properties = Object.keys(status.faderEffect[x]).filter(property => property !== 'Att');
+                for (j = 0; j < properties.length; j++) {
                     device.send(
                         config.parameterRequest([config.sysExElements.sumEffect[x], j, channel - 1])
                     )

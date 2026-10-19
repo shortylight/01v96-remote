@@ -101,6 +101,8 @@ export function createClientMessageHandler(
                     effectElement = message.prop === "Pan" ? config.sysExElements.channelPan :
                         message.prop === "Phase" ? config.sysExElements.channelPhase :
                         config.sysExElements.channelRouting;
+                } else if (message.target === "channel" && message.effect === "eq" && message.prop === "Att") {
+                    effectElement = config.sysExElements.channelAttenuator;
                 } else if (message.target === "channel") {
                     effectElement = config.sysExElements.channelEffect[message.effect];
                 } else if (message.target === "sum") {
@@ -123,6 +125,7 @@ export function createClientMessageHandler(
                     !propertyValues ||
                     typeof propertyValues !== "object" ||
                     effectElement === undefined ||
+                    (message.effect === "eq" && message.prop === "Att" && message.target !== "channel") ||
                     (typeof message.value !== "number" && typeof message.value !== "boolean") ||
                     (typeof message.value === "number" && !Number.isFinite(message.value))
                 ) {
@@ -145,6 +148,8 @@ export function createClientMessageHandler(
                         } else {
                             setFaderEffect(config.sysExElements.channelRouting, Number(Object.keys(status.faderEffect[message.effect]).indexOf(message.prop) - 2), message.num, message.value);
                         }
+                    } else if (message.effect === "eq" && message.prop === "Att") {
+                        setFaderEffect(config.sysExElements.channelAttenuator, 0, message.num, message.value);
                     } else {
                         setFaderEffect(config.sysExElements.channelEffect[message.effect], Object.keys(status.faderEffect[message.effect]).indexOf(message.prop), message.num, message.value);
                     }
