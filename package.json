@@ -15,9 +15,8 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "midi": "^1.0.0",
+    "@julusian/midi": "^3.8.1",
     "node-static": "^0.7.11",
-    "serialport": "^9.0.3",
     "ws": "^7.4.6"
   }
 }

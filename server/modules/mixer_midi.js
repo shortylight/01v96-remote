@@ -1,6 +1,7 @@
-﻿var midi = require('midi'),
-    input = new midi.input(),
-    output = new midi.output(),
+﻿const midi = require('@julusian/midi')
+
+var input = new midi.Input(),
+    output = new midi.Output(),
 
     listener = false,
 
@@ -60,6 +61,7 @@ for(i = 0; i < outputPortCount; i++) {
 
         break;
     }
+    console.log('[mixer_midi] MIDI output port ' + i + ' / ' + output.getPortName(i) + ' does not match.');
 }
 
 if(!foundOutputPort) {
