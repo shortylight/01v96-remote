@@ -72,7 +72,7 @@ export function createDeviceMessageHandler(
                         num = message[8] + 1;
                         value = config.data2Value(message.slice(9));
 
-                        status.faderEffect['gate'][Object.keys(status.faderEffect['gate'])[message[7]]]['channel' + i] = value;
+                        status.faderEffect['gate'][Object.keys(status.faderEffect['gate'])[message[7]]]['channel' + num] = value;
 
                         outMessage = {
                             type: 'faderEffect',
@@ -152,30 +152,10 @@ export function createDeviceMessageHandler(
 
                         break;
 
-                    case config.sysExElements.channelAttenuator:
-                        if (message[7] !== 0) {
-                            break;
-                        }
-
-                        num = message[8] + 1;
-                        value = config.data2Value(message.slice(9));
-                        status.faderEffect['eq']['Att']['channel' + num] = value;
-
-                        outMessage = {
-                            type: 'faderEffect',
-                            target: 'eq',
-                            num: num,
-                            value: value,
-                            prop: 'Att',
-                            faderType: 'channel'
-                        };
-
-                        break;
-
                     case config.sysExElements.sumEffect['comp']:
-                        num = message[8] + 1;
+                        num = 0;
                         value = config.data2Value(message.slice(9));
-                        status.faderEffect['comp'][Object.keys(status.faderEffect['comp'])[message[7]]]['sum' + num] = value;
+                        status.faderEffect['comp'][Object.keys(status.faderEffect['comp'])[message[7]]]['sum0'] = value;
 
                         outMessage = {
                             type: 'faderEffect',
@@ -189,10 +169,10 @@ export function createDeviceMessageHandler(
                         break;
 
                     case config.sysExElements.sumEffect['eq']:
-                        num = message[8] + 1;
+                        num = 0;
                         value = config.data2Value(message.slice(9));
 
-                        status.faderEffect['eq'][Object.keys(status.faderEffect['eq'])[message[7]]]['sum' + num] = value;
+                        status.faderEffect['eq'][Object.keys(status.faderEffect['eq'])[message[7]]]['sum0'] = value;
 
                         outMessage = {
                             type: 'faderEffect',
@@ -206,7 +186,7 @@ export function createDeviceMessageHandler(
                         break;
 
                     case config.sysExElements.sumEffect['delay']:
-                        num = message[8] + 1;
+                        num = 0;
                         value = config.data2Value(message.slice(9));
 
                         if (message[7] == 0) {
@@ -214,7 +194,7 @@ export function createDeviceMessageHandler(
                         } else {
                             property = "Time"
                         }
-                        status.faderEffect['delay'][property]['sum' + num] = value;
+                        status.faderEffect['delay'][property]['sum0'] = value;
 
                         outMessage = {
                             type: 'faderEffect',
@@ -228,10 +208,10 @@ export function createDeviceMessageHandler(
                         break;
 
                     case config.sysExElements.sumPan:
-                        num = message[8] + 1;
+                        num = 0;
                         value = config.data2Value(message.slice(9));
 
-                        status.faderEffect['main']['Pan']['sum' + num] = value;
+                        status.faderEffect['main']['Pan']['sum0'] = value;
 
                         outMessage = {
                             type: 'faderEffect',
@@ -319,7 +299,7 @@ export function createDeviceMessageHandler(
                     case config.sysExElements.busEffect['comp']:
                         num = message[8] + 1;
                         value = config.data2Value(message.slice(9));
-                        status.faderEffect['comp'][Object.keys(status.faderEffect['comp'])[message[7]]]['subusm' + num] = value;
+                        status.faderEffect['comp'][Object.keys(status.faderEffect['comp'])[message[7]]]['bus' + num] = value;
 
                         outMessage = {
                             type: 'faderEffect',
@@ -435,6 +415,26 @@ export function createDeviceMessageHandler(
                             num: num,
                             prop: 'Pair',
                             value: value
+                        };
+
+                        break;
+
+                    case config.sysExElements.channelAttenuator:
+                        if (message[7] !== 0) {
+                            break;
+                        }
+
+                        num = message[8] + 1;
+                        value = config.data2Value(message.slice(9));
+                        status.faderEffect['eq']['Att']['channel' + num] = value;
+
+                        outMessage = {
+                            type: 'faderEffect',
+                            target: 'eq',
+                            num: num,
+                            value: value,
+                            prop: 'Att',
+                            faderType: 'channel'
                         };
 
                         break;

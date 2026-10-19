@@ -2,6 +2,7 @@ import type { MixerConfig, MixerDevice, MixerStatus } from "./mixer-types";
 
 export function createMixerRequests(config: MixerConfig, status: MixerStatus, device: MixerDevice) {
     let faderNameRequestTimer: NodeJS.Timeout | undefined;
+    let syncRequestTimer: NodeJS.Timeout | undefined;
 
     const sendRemoteMeterRequest = function () {
         let i;
@@ -161,80 +162,113 @@ export function createMixerRequests(config: MixerConfig, status: MixerStatus, de
         device.send(config.parameterRequest([config.sysExElements.channelPan, 0, channel - 1]));
     };
 
-    const sendChannelPairRequests = function () {
-        let channel = 0;
-        const requestNextChannel = function () {
-            device.send(config.parameterRequest([config.sysExElements.channelPair, 0, channel]));
-            channel++;
-            if (channel < config.channelCount) {
-                setTimeout(requestNextChannel, 130);
+    const sendSyncRequest = function () {
+        const pendingRequests: number[][] = [];
+        const addRequests = function(element: number, parameterCount: number, channelCount: number) {
+            let channel, parameter;
+            for (channel = 0; channel < channelCount; channel++) {
+                for (parameter = 0; parameter < parameterCount; parameter++) {
+                    pendingRequests.push(config.parameterRequest([element, parameter, channel]));
+                }
             }
         };
-
-        setTimeout(requestNextChannel, 1000);
-    };
-
-    const sendSyncRequest = function () {
-        let i, j, limit, auxSendParam;
-        for (i in config.sysExElements) {
-            if (Object.prototype.hasOwnProperty.call(config.sysExElements, i)) {
-
-                // multiple parameter per channel sends are handled later
-                if (i.indexOf('auxSend') === 0 || i.indexOf('channelGate') === 0 || i.indexOf('channelComp') === 0 || i.indexOf('channelEQ') === 0 || i.indexOf('channelDelay') === 0) {
-                    continue;
+        const addEffectRequests = function(
+            elements: Record<string, number>,
+            effects: string[],
+            channelCount: number,
+            excludeAttenuator: boolean,
+            outputDelayParameterCount?: number
+        ) {
+            let effect, parameterCount;
+            for (effect of effects) {
+                parameterCount = Object.keys(status.faderEffect[effect]).filter(
+                    property => !excludeAttenuator || property !== 'Att'
+                ).length;
+                if (effect === 'delay' && outputDelayParameterCount !== undefined) {
+                    parameterCount = outputDelayParameterCount;
                 }
+                addRequests(elements[effect], parameterCount, channelCount);
+            }
+        };
+        let channel, aux, parameter, auxSend, nextRequestIndex = 0;
 
-                // single parameter per channel
-                if (i.indexOf('channel') === 0) {
-                    limit = config.channelCount;
-                }
-                else if (i.indexOf('aux') === 0) {
-                    limit = config.auxCount;
-                }
-                else if (i.indexOf('bus') === 0) {
-                    limit = config.busCount;
-                }
-                else {
-                    limit = 1;
-                }
+        if (syncRequestTimer) {
+            clearTimeout(syncRequestTimer);
+        }
 
-                for (j = 0; j < limit; j++) {
-                    device.send(
-                        config.parameterRequest(
-                            [config.sysExElements[i], 0, j]
-                        )
-                    );
-                }
+        for (const element of [
+            config.sysExElements.channelPhase,
+            config.sysExElements.channelPair,
+            config.sysExElements.channelOn,
+            config.sysExElements.channelPan,
+            config.sysExElements.channelAttenuator,
+            config.sysExElements.channelFader
+        ]) {
+            addRequests(element, 1, config.channelCount);
+        }
 
+        addRequests(
+            config.sysExElements.channelRouting,
+            Object.keys(status.faderEffect.main).length - 2,
+            config.channelCount
+        );
+        addEffectRequests(config.sysExElements.channelEffect, ['gate', 'comp', 'eq', 'delay'], config.channelCount, true);
+
+        for (const element of [
+            config.sysExElements.auxOn,
+            config.sysExElements.auxPan,
+            config.sysExElements.auxFader,
+            config.sysExElements.auxPair
+        ]) {
+            addRequests(element, 1, config.auxCount);
+        }
+        addEffectRequests(config.sysExElements.auxEffect, ['comp', 'eq', 'delay'], config.auxCount, true, 2);
+
+        for (const element of [
+            config.sysExElements.busOn,
+            config.sysExElements.busPan,
+            config.sysExElements.busFader,
+            config.sysExElements.busPair
+        ]) {
+            addRequests(element, 1, config.busCount);
+        }
+        addEffectRequests(config.sysExElements.busEffect, ['comp', 'eq', 'delay'], config.busCount, true, 2);
+
+        addRequests(config.sysExElements.sumOn, 1, 1);
+        addRequests(config.sysExElements.sumPan, 1, 1);
+        addRequests(config.sysExElements.sumFader, 1, 1);
+        addEffectRequests(config.sysExElements.sumEffect, ['comp', 'eq', 'delay'], 1, true, 2);
+
+        for (auxSend = 1; auxSend <= config.auxSendCount; auxSend++) {
+            parameter = config.auxSendParam(auxSend);
+            for (channel = 0; channel < config.channelCount; channel++) {
+                pendingRequests.push(
+                    config.parameterRequest([config.sysExElements.auxSendFader, parameter, channel])
+                );
             }
         }
 
-        // multiple parameter per channel
-        // aux send: requests for all channels for all aux
-        for (i = 1; i <= config.auxSendCount; i++) {
-            auxSendParam = config.auxSendParam(i);
-
-            for (j = 0; j < config.channelCount; j++) {
-                device.send(
-                    config.parameterRequest(
-                        [config.sysExElements.auxSendFader, auxSendParam, j]
-                    )
+        for (aux = 0; aux < config.auxSendCount / 2; aux++) {
+            for (channel = 0; channel < config.channelCount; channel++) {
+                pendingRequests.push(
+                    config.parameterRequest([config.sysExElements.auxSendPan, aux, channel])
                 );
             }
+        }
+
+        const sendNextRequest = function() {
+            const nextRequest = pendingRequests[nextRequestIndex++];
+            if (!nextRequest) {
+                syncRequestTimer = undefined;
+                return;
+            }
+            device.send(nextRequest);
+            syncRequestTimer = setTimeout(sendNextRequest, 5);
         };
 
-        // aux send: request for pan of all aux channels
-        for (i = 0; i < config.auxSendCount/2; i++) {
-            for (j = 0; j < config.channelCount; j++) {
-                device.send(
-                    config.parameterRequest(
-                        [config.sysExElements.auxSendPan, i  , j]
-                    )
-                );
-            }
-        };
+        sendNextRequest();
 
     };
 
-        return { sendRemoteMeterRequest, sendFaderNameRequest, sendAuxNameRequest, sendBusNameRequest, sendSumNameRequest, sendChannelEffectRequest, sendChannelPanRequest, sendChannelPairRequests, sendSyncRequest };
+        return { sendRemoteMeterRequest, sendFaderNameRequest, sendAuxNameRequest, sendBusNameRequest, sendSumNameRequest, sendChannelEffectRequest, sendChannelPanRequest, sendSyncRequest };
 }
